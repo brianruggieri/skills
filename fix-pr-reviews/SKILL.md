@@ -115,7 +115,17 @@ After all fixes:
 
 4. **If merge conflicts exist:** resolve them, run tests again, commit the resolution.
 
-### Phase 5: Commit and Push
+### Phase 5: Manual Test Plan Verification
+
+Check the PR description for any unchecked manual test items (lines matching `- [ ]`). For each:
+
+1. **If the test can run non-interactively** — run it and verify the output.
+2. **If the test requires interactive input** — prompt the user to run it in their terminal. Provide the exact command. Wait for confirmation or output before marking it complete.
+3. **Update the PR description** to check off completed items (`- [x]`).
+
+If there are no manual test items, skip this phase.
+
+### Phase 6: Commit and Push
 
 1. **Stage only changed files** — never use `git add -A` or `git add .`:
    ```bash
@@ -138,7 +148,7 @@ After all fixes:
    git push origin <branch>
    ```
 
-### Phase 6: Resolve Review Threads
+### Phase 7: Resolve Review Threads
 
 After all fixes are pushed, resolve each review thread on GitHub via GraphQL:
 
@@ -174,7 +184,7 @@ After all fixes are pushed, resolve each review thread on GitHub via GraphQL:
 
    Only resolve threads whose underlying issue was actually fixed. If a comment was skipped (informational, inapplicable, or disagreed with), leave it unresolved and reply explaining why.
 
-### Phase 7: Update PR
+### Phase 8: Update PR
 
 1. **Update the PR description** to reflect current state:
    - Mark resolved test plan items as checked `[x]`
@@ -198,7 +208,7 @@ After all fixes are pushed, resolve each review thread on GitHub via GraphQL:
    gh pr view <number> --json mergeable,mergeStateStatus
    ```
 
-### Phase 8: Report
+### Phase 9: Report
 
 Display a summary:
 

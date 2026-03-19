@@ -138,7 +138,43 @@ After all fixes:
    git push origin <branch>
    ```
 
-### Phase 6: Update PR
+### Phase 6: Resolve Review Threads
+
+After all fixes are pushed, resolve each review thread on GitHub via GraphQL:
+
+1. **Fetch unresolved thread IDs:**
+   ```bash
+   gh api graphql -f query='
+   query {
+     repository(owner: "<owner>", name: "<repo>") {
+       pullRequest(number: <number>) {
+         reviewThreads(first: 50) {
+           nodes {
+             id
+             isResolved
+             comments(first: 1) {
+               nodes { body }
+             }
+           }
+         }
+       }
+     }
+   }' --jq '.data.repository.pullRequest.reviewThreads.nodes[] | select(.isResolved == false) | .id'
+   ```
+
+2. **Resolve each thread** that was addressed:
+   ```bash
+   gh api graphql -f query='
+   mutation {
+     resolveReviewThread(input: {threadId: "<thread_id>"}) {
+       thread { isResolved }
+     }
+   }'
+   ```
+
+   Only resolve threads whose underlying issue was actually fixed. If a comment was skipped (informational, inapplicable, or disagreed with), leave it unresolved and reply explaining why.
+
+### Phase 7: Update PR
 
 1. **Update the PR description** to reflect current state:
    - Mark resolved test plan items as checked `[x]`
@@ -162,7 +198,7 @@ After all fixes:
    gh pr view <number> --json mergeable,mergeStateStatus
    ```
 
-### Phase 7: Report
+### Phase 8: Report
 
 Display a summary:
 
@@ -174,6 +210,7 @@ Comments addressed: <N>/<total>
   - Important: <N> fixed
   - Style: <N> fixed
   - Skipped: <N> (with reasons)
+Threads resolved: <N>/<total>
 
 Tests: <passed> passed, <failed> failed, <skipped> skipped
 Lint: clean / <N> issues

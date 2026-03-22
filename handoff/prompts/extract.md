@@ -7,6 +7,8 @@ You are reading a preprocessed session transcript. Your job is to extract a hand
 - Write in imperative voice ("Use X", "Avoid Y", not "We decided to X")
 - Only extract what was explicitly discussed or demonstrated in the transcript. Do NOT infer decisions that were not stated. Do NOT fabricate alternatives that were not mentioned.
 - Be ruthlessly selective. A handoff with 20 minor decisions buries the 3 that matter. For each item ask: "Would a fresh session make a materially different choice without this?" If no, omit it.
+- Prioritize strategic decisions (architecture, tool choice, distribution format) over tactical ones (file paths, variable names). A fresh session needs to know WHY, not just WHAT.
+- If the transcript includes content pasted from prior sessions or other conversations, treat it as part of the context — decisions and failures from prior work are valid extraction targets.
 - Do NOT include API keys, passwords, connection strings, tokens, or secrets. If a decision references a secret, describe the decision without the value.
 - Target 600-1000 tokens total. If the session was long, prioritize recency and relevance over completeness.
 
@@ -26,8 +28,13 @@ Produce EXACTLY this markdown structure. Do not add, remove, or rename sections.
 
 ## Do Not Retry
 <Bulleted list. What was tried or considered and failed or was explicitly ruled out.>
-- <what was attempted> — <why it failed or was ruled out>
-<This is the highest-value section. Be specific about failure modes so the next session does not re-attempt.>
+- <what was attempted> — <specific failure mode or reason it was rejected>
+<This is the highest-value section. Look for:>
+<- Prior implementations or prototypes that were evaluated and found broken>
+<- Approaches that were discussed and explicitly rejected with reasons>
+<- Technical assumptions that turned out to be wrong>
+<- Dead-end debugging paths or incorrect API usage discovered>
+<Be specific enough that the next session won't re-attempt these.>
 <If nothing failed, write "No failed approaches to report.">
 
 ## Constraints

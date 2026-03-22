@@ -4,7 +4,14 @@ You are reading a preprocessed session transcript. Your job is to extract a hand
 
 ## Rules
 
-- Write in imperative voice throughout ("Use X", "Avoid Y", "Do not build X", not "We decided to X" or "Decided against X"). In Decisions, frame choices as directives: "Use X over Y" not "Chose X over Y".
+- **Voice rules by section:**
+  - **Summary:** Terse past tense — "Fixed X in Y", "Added Z to W". No narrative arcs or storytelling ("Evaluated..., which found..., then rebuilt..."). List what changed and the outcome, nothing more.
+  - **Decisions:** Imperative directives — "Use X over Y" not "Chose X over Y" or "Decided on X".
+  - **Do Not Retry:** Every item MUST start with "Do not" — e.g., "Do not import from stripe/lib/crypto — internal paths changed between v11 and v12". Never "Rejected...", "Ruled out...", or "The X implementation is non-functional...".
+  - **Constraints:** Imperative rules — "Do not add BullMQ until..." not "BullMQ was deferred".
+  - **Next Steps:** Imperative actions — "Implement X", "Add Y". Not "The next step would be..."
+  - **Key Files:** Directive annotations — "auth middleware for Express routes (to be created)" not "This file contains..."
+- **One sentence per bullet.** Each item in Decisions, Do Not Retry, Constraints, and Key Files must be a single sentence. If you need a second sentence, you are not being concise enough. Compress.
 - Only extract what was explicitly discussed or demonstrated in the transcript. Do NOT infer decisions that were not stated. Do NOT fabricate alternatives that were not mentioned.
 - Be ruthlessly selective. A handoff with 20 minor decisions buries the 3 that matter. For each item ask: "Would a fresh session make a materially different choice without this?" If no, omit it.
 - Prioritize strategic decisions (architecture, tool choice, distribution format) over tactical ones (file paths, variable names). A fresh session needs to know WHY, not just WHAT.
@@ -54,7 +61,9 @@ Produce EXACTLY this markdown structure. Do not add, remove, or rename sections.
 <Numbered list in dependency order. Concrete enough to execute without a discovery phase.>
 1. <first task> — <why it is first, or what it depends on>
 2. <second task> — <dependency if any>
-<If the work was completed — look for signals like "that's all", "we're done", "thanks", user confirming final commit, or tests passing with no further requests — write "Task complete — <one-line summary of what shipped and on which branch>.">
+<If the work was completed — look for signals like "that's all", "we're done", "thanks", user confirming final commit, or tests passing with no further requests:>
+<- If the user mentioned future work or TODOs during the session, list those as numbered steps even though the main task is done. Prefix with "Task complete — <what shipped>. Remaining work mentioned:">
+<- If genuinely nothing was mentioned for future work, write "Task complete — <one-line summary of what shipped and on which branch>. No follow-up work identified.">
 <ONLY use "Session ended without a defined plan" if the session was genuinely interrupted mid-task with unfinished work and no user sign-off.>
 
 ## Key Files

@@ -1,0 +1,244 @@
+#!/usr/bin/env bash
+# scope-repo — Unified codebase planning via Claude Code Agent Teams
+#
+# Usage: scope-repo [options]
+#   Run from the root of any git repository.
+#
+# Options:
+#   --briefings DIR        Reuse briefings from a prior run (skips Phase 1)
+#   --execute-quick-wins   Enable Phase 1.5: execute trivial improvements
+#   --dry-run              Print the launch prompt without starting Claude Code
+#   --cleanup              Remove any leftover .scopework-CLAUDE.md.bak and session dirs
+#   --no-issues            Skip GitHub Issues creation in the output phase
+#   --help                 Show this help
+#
+# Requirements:
+#   - Claude Code CLI with Agent Teams enabled
+#   - CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1 in settings.json
+#   - Opus 4.6 model access
+#   - Run from inside a git repo
+
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+CLAUDE_MD_SOURCE="$SCRIPT_DIR/SKILL.md"
+DRY_RUN=false
+NO_ISSUES=false
+BRIEFINGS_DIR=""
+EXECUTE_QUICK_WINS=false
+
+# --- Parse args ---
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --dry-run)          DRY_RUN=true; shift ;;
+    --no-issues)        NO_ISSUES=true; shift ;;
+    --execute-quick-wins) EXECUTE_QUICK_WINS=true; shift ;;
+    --briefings)
+      if [[ -z "${2:-}" ]]; then
+        echo "Error: --briefings requires a directory argument."
+        exit 1
+      fi
+      BRIEFINGS_DIR="$2"
+      if [ ! -d "$BRIEFINGS_DIR" ]; then
+        echo "Error: Briefings directory does not exist: $BRIEFINGS_DIR"
+        exit 1
+      fi
+      BRIEFING_COUNT=$(find "$BRIEFINGS_DIR" -maxdepth 1 -name '*.md' | wc -l | tr -d ' ')
+      if [ "$BRIEFING_COUNT" -eq 0 ]; then
+        echo "Error: No .md files found in briefings directory: $BRIEFINGS_DIR"
+        exit 1
+      fi
+      shift 2
+      ;;
+    --cleanup)
+      echo "Cleaning up..."
+      [ -f ".scopework-CLAUDE.md.bak" ] && mv .scopework-CLAUDE.md.bak CLAUDE.md && echo "Restored CLAUDE.md from backup"
+      rm -rf /tmp/plan-session-*
+      echo "Done."
+      exit 0
+      ;;
+    --help)
+      head -20 "$0" | grep '^#' | sed 's/^# \?//'
+      exit 0
+      ;;
+    *)
+      echo "Unknown option: $1"
+      exit 1
+      ;;
+  esac
+done
+
+# --- Auto-detect prior briefings ---
+if [ -z "$BRIEFINGS_DIR" ]; then
+  LATEST_BRIEFINGS=$(find /tmp -maxdepth 3 -path '*/plan-session-*/briefings' -type d 2>/dev/null | sort -r | head -1)
+  if [ -n "$LATEST_BRIEFINGS" ]; then
+    MD_COUNT=$(find "$LATEST_BRIEFINGS" -maxdepth 1 -name '*.md' 2>/dev/null | wc -l | tr -d ' ')
+    if [ "$MD_COUNT" -gt 0 ]; then
+      echo "Auto-detected prior briefings at: $LATEST_BRIEFINGS ($MD_COUNT files)"
+      echo "Use --briefings $LATEST_BRIEFINGS to reuse, or ignore to run fresh analysis."
+      echo ""
+    fi
+  fi
+fi
+
+# --- Validate environment ---
+git rev-parse --git-dir > /dev/null 2>&1 || { echo "Error: Not inside a git repository."; exit 1; }
+command -v claude > /dev/null 2>&1 || { echo "Error: 'claude' CLI not found in PATH."; exit 1; }
+[ -f "$CLAUDE_MD_SOURCE" ] || { echo "Error: CLAUDE.md not found at $CLAUDE_MD_SOURCE"; exit 1; }
+
+# --- Setup ---
+REPO_ROOT="$(git rev-parse --show-toplevel)"
+REPO_NAME="$(basename "$REPO_ROOT")"
+SESSION_DIR="/tmp/plan-session-$(date +%s)"
+mkdir -p "$SESSION_DIR"/{briefings,interview,output}
+
+if [ -n "$BRIEFINGS_DIR" ]; then
+  cp "$BRIEFINGS_DIR"/*.md "$SESSION_DIR/briefings/"
+  echo "Copied $(ls "$SESSION_DIR/briefings/"*.md | wc -l | tr -d ' ') briefings into session."
+  echo ""
+fi
+
+GH_AVAILABLE=false
+command -v gh > /dev/null 2>&1 && GH_AVAILABLE=true
+[ "$GH_AVAILABLE" = false ] && echo "Note: gh CLI not found. GitHub Issues creation will be unavailable." && echo ""
+
+# --- Handle CLAUDE.md merge ---
+if [ -f "$REPO_ROOT/CLAUDE.md" ]; then
+  cp "$REPO_ROOT/CLAUDE.md" "$REPO_ROOT/.scopework-CLAUDE.md.bak"
+  echo "Backed up existing CLAUDE.md -> .scopework-CLAUDE.md.bak"
+  echo ""
+  {
+    cat "$REPO_ROOT/CLAUDE.md"
+    echo ""
+    echo "---"
+    echo ""
+    cat "$CLAUDE_MD_SOURCE"
+  } > "$REPO_ROOT/CLAUDE.md.tmp"
+  mv "$REPO_ROOT/CLAUDE.md.tmp" "$REPO_ROOT/CLAUDE.md"
+else
+  cp "$CLAUDE_MD_SOURCE" "$REPO_ROOT/CLAUDE.md"
+fi
+
+# Cleanup handler — restore CLAUDE.md on exit
+cleanup() {
+  if [ -f "$REPO_ROOT/.scopework-CLAUDE.md.bak" ]; then
+    mv "$REPO_ROOT/.scopework-CLAUDE.md.bak" "$REPO_ROOT/CLAUDE.md"
+    echo ""
+    echo "Restored original CLAUDE.md"
+  elif [ -f "$REPO_ROOT/CLAUDE.md" ]; then
+    if grep -q "scopework Agent Team" "$REPO_ROOT/CLAUDE.md" 2>/dev/null; then
+      rm "$REPO_ROOT/CLAUDE.md"
+      echo ""
+      echo "Removed temporary CLAUDE.md"
+    fi
+  fi
+  echo "Session workspace preserved at: $SESSION_DIR"
+}
+trap cleanup EXIT
+
+# --- Resolve template values ---
+BRIEFINGS_CONTEXT="none — run fresh analysis"
+if [ -n "$BRIEFINGS_DIR" ]; then
+  BRIEFINGS_CONTEXT="$SESSION_DIR/briefings/ (copied from $BRIEFINGS_DIR)"
+fi
+
+# --- Build launch prompt ---
+read -r -d '' LAUNCH_PROMPT << PROMPT_END || true
+You are the lead agent for a scopework planning session. Your job is to analyze this repository with a team of expert analysts, interview the maintainer, validate scope, and produce a prioritized ROADMAP.md (plus optional GitHub Issues).
+
+**Read the CLAUDE.md file first.** It contains the full team role definitions, interview protocol, and output templates. Follow it precisely.
+
+## Session Context
+
+- **Repo root**: $REPO_ROOT
+- **Repo name**: $REPO_NAME
+- **Session workspace**: $SESSION_DIR
+- **Briefings**: $BRIEFINGS_CONTEXT
+- **Execute quick wins**: $EXECUTE_QUICK_WINS
+- **GitHub CLI (gh)**: $([ "$GH_AVAILABLE" = true ] && echo "available" || echo "not available — skip issue creation")
+- **Issue creation**: $([ "$NO_ISSUES" = true ] && echo "disabled (--no-issues flag)" || echo "enabled (if gh available and user approves)")
+
+Everywhere CLAUDE.md says {SESSION_DIR}, use: $SESSION_DIR
+Everywhere CLAUDE.md says {REPO_ROOT}, use: $REPO_ROOT
+
+## Phase 1: Reconnaissance
+
+If prior briefings are provided at $BRIEFINGS_CONTEXT, read them from $SESSION_DIR/briefings/ instead of spawning analysts. Note: analysts will NOT be available for live queries in Phases 2-3 when using cached briefings.
+
+Otherwise, run fresh analysis per CLAUDE.md:
+1. Inspect the repo (pre-spawn checklist in CLAUDE.md), then spawn all core + warranted domain analysts in parallel.
+2. Each analyst spawn prompt must include: role, focus area, repo root ($REPO_ROOT), session dir ($SESSION_DIR), startup task, briefing format, and instruction to write to $SESSION_DIR/briefings/ then remain available.
+3. Wait for ALL briefings before proceeding. Check with \`ls\`. Do NOT start the interview early.
+
+## Phase 1.5: Quick Win Execution (enabled)
+
+After briefings are ready, if enabled:
+1. Collect all "Quick Wins" from briefings. Filter to: under 30 min, zero risk, independently executable.
+2. Present filtered list to user (briefing source, files, proposed change). Ask which to execute.
+3. For each approved item: make the change, run tests. If tests fail, revert immediately.
+4. Log results in $SESSION_DIR/interview/decisions.md under "## Quick Wins Executed".
+Skip this phase if quick wins are not enabled.
+
+## Phase 2: Interview
+
+1. Read all briefings. Identify top 5-8 topics, conflicts between briefings, areas needing user input.
+2. Follow Interview Protocol in CLAUDE.md. Max 12 questions. Ground every question in a specific finding.
+3. Track decisions in $SESSION_DIR/interview/decisions.md as you go.
+4. For deeper questions: resume relevant analyst (fresh run only — unavailable with cached briefings).
+
+## Phase 3: Scope Validation
+
+With cached briefings: validate scope yourself from briefings + your own codebase analysis. Note in decisions.md.
+With live analysts: resume each relevant analyst to confirm files, dependencies, effort, and surprises per CLAUDE.md format.
+
+## Phase 4: Output
+
+1. Write $SESSION_DIR/output/ROADMAP.md per the template in CLAUDE.md, then \`cp $SESSION_DIR/output/ROADMAP.md $REPO_ROOT/ROADMAP.md\`.
+2. If gh available and --no-issues not set: propose issues, get approval, create with \`gh issue create\`.
+
+## Critical Reminders
+
+- **No API calls.** Everything via Claude Code CLI on subscription.
+- **No source modifications** except Phase 1.5 quick wins (if approved) and final ROADMAP.md. All working files in $SESSION_DIR/.
+- **Read real code.** Every claim grounded in actual files.
+- **Follow CLAUDE.md templates exactly.** Read it before doing anything.
+- **Teammates don't inherit your history.** Be generous with spawn prompt context.
+PROMPT_END
+
+# --- Launch ---
+BRIEFINGS_LABEL="fresh analysis"
+[ -n "$BRIEFINGS_DIR" ] && BRIEFINGS_LABEL="reusing from $BRIEFINGS_DIR"
+QUICK_WINS_LABEL=""
+[ "$EXECUTE_QUICK_WINS" = true ] && QUICK_WINS_LABEL="\n║  Quick wins: enabled"
+
+echo "╔══════════════════════════════════════════════════╗"
+echo "║          scopework v1.0                         ║"
+echo "╠══════════════════════════════════════════════════╣"
+printf "║  Repo:     %s\n║  Root:     %s\n║  Session:  %s\n║  Briefings: %s%b\n║  GitHub:   %s\n" \
+  "$REPO_NAME" "$REPO_ROOT" "$SESSION_DIR" "$BRIEFINGS_LABEL" "$QUICK_WINS_LABEL" \
+  "$([ "$GH_AVAILABLE" = true ] && echo "available" || echo "not found")"
+echo "╚══════════════════════════════════════════════════╝"
+echo ""
+
+if [ "$DRY_RUN" = true ]; then
+  echo "=== DRY RUN — Launch prompt ==="
+  echo ""
+  echo "$LAUNCH_PROMPT"
+  echo ""
+  echo "=== End prompt ==="
+  echo "To test: cd $REPO_ROOT && claude"
+  exit 0
+fi
+
+PIPELINE="Recon"
+[ -n "$BRIEFINGS_DIR" ] && PIPELINE="Briefings (cached)"
+[ "$EXECUTE_QUICK_WINS" = true ] && PIPELINE="$PIPELINE -> Quick Wins"
+PIPELINE="$PIPELINE -> Interview -> Validate -> Output"
+
+echo "Launching Claude Code with Agent Teams..."
+echo "Pipeline: $PIPELINE"
+echo ""
+[ -z "$BRIEFINGS_DIR" ] && echo "Tip: Watch briefings arrive:  watch ls $SESSION_DIR/briefings/" && echo ""
+
+cd "$REPO_ROOT"
+claude --prompt "$LAUNCH_PROMPT"

@@ -18,6 +18,14 @@ Systematically address every review comment on a GitHub PR. Categorizes comments
 
 `/fix-pr-reviews` when a PR has review comments piling up.
 
+### handoff
+
+Extract structured context from a planning session and generate a handoff document for a fresh build session. Captures decisions, negative knowledge ("Do Not Retry"), constraints, and next steps. Uses a JSONL preprocessor and Claude-as-extractor architecture. Auto-saves session transcripts for eval corpus building.
+
+Includes a blind eval harness (`/eval-extract`) that dispatches isolated subagents to grade extraction quality across 8 dimensions.
+
+`/handoff` when a planning session is complete and you want to start building in a clean context window.
+
 ### scope-repo
 
 Full codebase planning pipeline using Claude Code Agent Teams. Spawns 4-9 analyst agents to scan a repo in parallel, interviews you using their findings, validates scope, and outputs a prioritized `ROADMAP.md` plus GitHub Issues with dependency links. One session, ~20-30 minutes.
@@ -52,6 +60,12 @@ skills/
 │   └── SKILL.md
 ├── fix-pr-reviews/
 │   └── SKILL.md
+├── handoff/
+│   ├── SKILL.md
+│   ├── prompts/       # extraction + convention detection prompts
+│   ├── eval/          # blind eval harness (SKILL.md + grading rubric)
+│   ├── scripts/       # JSONL preprocessor
+│   └── tests/         # fixtures for eval
 └── scope-repo/
     ├── SKILL.md
     ├── scopework      # standalone CLI wrapper

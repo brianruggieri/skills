@@ -84,6 +84,12 @@ If the preprocessor cannot find the session JSONL, ask the user to provide the p
    grep -q '.claude/handoffs/' .gitignore 2>/dev/null || echo '.claude/handoffs/' >> .gitignore
    ```
 
+8. **Save transcript for eval:**
+   ```bash
+   cp /tmp/handoff-transcript.md ".claude/handoffs/${TIMESTAMP}-${SLUG}.transcript.md"
+   ```
+   This builds a corpus of real session transcripts automatically. The eval harness discovers these alongside curated fixtures.
+
 ### Phase 4: Present Diagnostics
 
 Display the handoff summary:

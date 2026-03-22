@@ -1,6 +1,12 @@
 ---
 name: eval-extract
 description: Blind evaluation of the handoff extraction prompt against test fixtures. Dispatches fresh agents for extraction and grading to eliminate author bias.
+allowed-tools:
+  - Read
+  - Write
+  - Bash
+  - Glob
+  - Agent
 ---
 
 # Eval: Handoff Extraction
@@ -29,6 +35,12 @@ Read this file (path relative to repo root):
 
 Note: `handoff/prompts/extract.md` is read by the extractor agents directly — the orchestrator does not need it.
 
+Resolve absolute paths for agent prompts:
+```bash
+EXTRACT_PROMPT="$(pwd)/handoff/prompts/extract.md"
+GRADE_PROMPT="$(pwd)/handoff/eval/prompts/grade.md"
+```
+
 ### Phase 3: Extract (Blind Agents — All Concurrent)
 
 Dispatch **all** extractor agents concurrently — one per fixture, each with `subagent_type: "general-purpose"`. Each agent is blind: no access to reference outputs, prior extractions, or the grading rubric.
@@ -38,7 +50,7 @@ Dispatch **all** extractor agents concurrently — one per fixture, each with `s
 You are performing a blind handoff extraction evaluation. Your ONLY job is to read
 a session transcript and apply an extraction prompt to produce a handoff document.
 
-STEP 1: Read the extraction prompt from {absolute path to extract.md}
+STEP 1: Read the extraction prompt from {EXTRACT_PROMPT}
 STEP 2: Read the session transcript from {absolute path to fixture file}
 STEP 3: Apply the extraction prompt to the transcript. Produce ONLY the extracted
          handoff document as your final output. No preamble, no explanation.
@@ -57,7 +69,7 @@ Once all extractions complete, dispatch **all** grader agents concurrently — o
 You are grading a handoff extraction. You have access to the grading rubric,
 the original transcript, and the extraction output to grade.
 
-STEP 1: Read the grading rubric from {absolute path to grade.md}
+STEP 1: Read the grading rubric from {GRADE_PROMPT}
 STEP 2: Read the original transcript from {absolute path to fixture file}
 STEP 3: Apply the grading rubric to the extraction output below. Produce ONLY
          the scorecard in the exact format specified by the rubric.

@@ -151,7 +151,7 @@ def die(msg: str):
 
 - [ ] **Step 2: Run the script to verify session discovery works**
 
-Run: `cd /Users/brianruggieri/git/skills && python3 handoff/scripts/preprocess.py --help`
+Run: `cd <repo-root> && python3 handoff/scripts/preprocess.py --help`
 Expected: Help text or usage error (script not complete yet, but no import errors)
 
 - [ ] **Step 3: Write the JSONL parsing and content extraction**
@@ -446,10 +446,10 @@ if __name__ == "__main__":
 
 - [ ] **Step 6: Test preprocessor against real session data**
 
-Run: `cd /Users/brianruggieri/git/skills && python3 handoff/scripts/preprocess.py | head -40`
+Run: `cd <repo-root> && python3 handoff/scripts/preprocess.py | head -40`
 Expected: Session metadata header, files referenced section, and conversation starting with USER/CLAUDE blocks.
 
-Run: `cd /Users/brianruggieri/git/skills && python3 handoff/scripts/preprocess.py | wc -c`
+Run: `cd <repo-root> && python3 handoff/scripts/preprocess.py | wc -c`
 Expected: Output size well under 600,000 characters.
 
 - [ ] **Step 7: Commit the preprocessor**
@@ -807,7 +807,7 @@ git commit -m "Add handoff skill orchestrator"
 - [ ] **Step 1: Run the preprocessor against the current session**
 
 ```bash
-cd /Users/brianruggieri/git/skills
+cd <repo-root>
 python3 handoff/scripts/preprocess.py --output /tmp/handoff-test-transcript.md
 ```
 
@@ -872,7 +872,7 @@ separate files for ralph-loop iteration."
 
 ```bash
 mkdir -p handoff/tests/fixtures
-cd /Users/brianruggieri/git/skills
+cd <repo-root>
 python3 handoff/scripts/preprocess.py --output handoff/tests/fixtures/real-planning-session.md
 ```
 

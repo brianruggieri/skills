@@ -84,11 +84,16 @@ If the preprocessor cannot find the session JSONL, ask the user to provide the p
    grep -q '.claude/handoffs/' .gitignore 2>/dev/null || echo '.claude/handoffs/' >> .gitignore
    ```
 
-8. **Save transcript for eval:**
+8. **Save transcript for eval** (with basic secret redaction):
    ```bash
-   cp /tmp/handoff-transcript.md ".claude/handoffs/${TIMESTAMP}-${SLUG}.transcript.md"
+   sed -E \
+     -e 's/(api[_-]?key[[:space:]]*[:=][[:space:]]*)[^ "'"'"']{10,}/\1REDACTED/gI' \
+     -e 's/(token[[:space:]]*[:=][[:space:]]*)[^ "'"'"']{10,}/\1REDACTED/gI' \
+     -e 's/(secret[[:space:]]*[:=][[:space:]]*)[^ "'"'"']{8,}/\1REDACTED/gI' \
+     -e 's/(password[[:space:]]*[:=][[:space:]]*)[^ "'"'"']{4,}/\1REDACTED/gI' \
+     /tmp/handoff-transcript.md > ".claude/handoffs/${FILENAME%.md}.transcript.md"
    ```
-   This builds a corpus of real session transcripts automatically. The eval harness discovers these alongside curated fixtures.
+   This builds a corpus of real session transcripts automatically. The eval harness discovers these alongside curated fixtures. The filename is derived from `${FILENAME}` to keep handoff and transcript deterministically linked.
 
 ### Phase 4: Present Diagnostics
 

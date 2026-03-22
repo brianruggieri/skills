@@ -69,7 +69,7 @@ CONCISENESS:   <0-10> | <one-line justification>
 FAITHFULNESS:  <0-10> | <one-line justification>
 SAFETY:        <0-10> | <one-line justification>
 
-OVERALL: <weighted average: faithfulness x3, structure x2, selectivity x2, specificity x2, voice x1, actionability x1, conciseness x1, safety x1>
+OVERALL: <(3*FAITHFULNESS + 2*STRUCTURE + 2*SELECTIVITY + 2*SPECIFICITY + VOICE + ACTIONABILITY + CONCISENESS + SAFETY) / 13, rounded to 1 decimal>
 
 PASS: <YES if OVERALL >= 7.0 AND no dimension below 4, otherwise NO>
 

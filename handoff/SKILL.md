@@ -86,12 +86,12 @@ If the preprocessor cannot find the session JSONL, ask the user to provide the p
 
 8. **Save transcript for eval** (with basic secret redaction):
    ```bash
-   sed -E \
-     -e 's/(api[_-]?key[[:space:]]*[:=][[:space:]]*)[^ "'"'"']{10,}/\1REDACTED/gI' \
-     -e 's/(token[[:space:]]*[:=][[:space:]]*)[^ "'"'"']{10,}/\1REDACTED/gI' \
-     -e 's/(secret[[:space:]]*[:=][[:space:]]*)[^ "'"'"']{8,}/\1REDACTED/gI' \
-     -e 's/(password[[:space:]]*[:=][[:space:]]*)[^ "'"'"']{4,}/\1REDACTED/gI' \
-     /tmp/handoff-transcript.md > ".claude/handoffs/${FILENAME%.md}.transcript.md"
+   perl -pe '
+     s/(api[_-]?key\s*[:=]\s*)\S{10,}/${1}REDACTED/gi;
+     s/(token\s*[:=]\s*)\S{10,}/${1}REDACTED/gi;
+     s/(secret\s*[:=]\s*)\S{8,}/${1}REDACTED/gi;
+     s/(password\s*[:=]\s*)\S{4,}/${1}REDACTED/gi;
+   ' /tmp/handoff-transcript.md > ".claude/handoffs/${FILENAME%.md}.transcript.md"
    ```
    This builds a corpus of real session transcripts automatically. The eval harness discovers these alongside curated fixtures. The filename is derived from `${FILENAME}` to keep handoff and transcript deterministically linked.
 

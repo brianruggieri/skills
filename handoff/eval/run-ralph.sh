@@ -21,7 +21,17 @@ while [ "$iteration" -lt "$MAX_ITERATIONS" ]; do
 	echo ""
 
 	# Run fresh Claude session with the prompt
-	cat "$PROMPT_FILE" | claude --dangerously-skip-permissions
+	# NOTE: --dangerously-skip-permissions is used because the ralph loop needs
+	# to read/write files and dispatch agents autonomously across iterations.
+	# Only run this in the skills repo, never in production codebases.
+	if [ "${RALPH_SKIP_PERMISSIONS:-}" = "1" ]; then
+		cat "$PROMPT_FILE" | claude --dangerously-skip-permissions
+	else
+		echo "WARNING: This script runs Claude with full file/agent access."
+		echo "Set RALPH_SKIP_PERMISSIONS=1 to proceed, or run interactively:"
+		echo "  cat $PROMPT_FILE | claude"
+		exit 1
+	fi
 
 	# Check if all fixtures passed
 	all_pass=true

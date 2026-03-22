@@ -23,7 +23,14 @@ Find fixtures from two sources:
 2. **Real transcripts** (captured by `/handoff`): `.claude/handoffs/*.transcript.md`
 
 ```bash
-ls handoff/tests/fixtures/*.md .claude/handoffs/*.transcript.md 2>/dev/null
+bash -O nullglob -c '
+  files=(handoff/tests/fixtures/*.md .claude/handoffs/*.transcript.md)
+  if ((${#files[@]} == 0)); then
+    echo "No fixtures found in handoff/tests/fixtures or .claude/handoffs"
+    exit 1
+  fi
+  printf "%s\n" "${files[@]}"
+'
 ```
 
 If no fixtures found in either location, tell the user and stop.

@@ -55,21 +55,20 @@ Or copy a skill directory into any project's `.claude/skills/` to share it with 
 ## Structure
 
 ```
-skills/
-├── grill-me/
-│   └── SKILL.md
-├── fix-pr-reviews/
-│   └── SKILL.md
-├── handoff/
-│   ├── SKILL.md
-│   ├── prompts/       # extraction + convention detection prompts
-│   ├── eval/          # blind eval harness (SKILL.md + grading rubric)
-│   ├── scripts/       # JSONL preprocessor
-│   └── tests/         # fixtures for eval
-└── scope-repo/
-    ├── SKILL.md
-    ├── scopework      # standalone CLI wrapper
-    └── install.sh
+grill-me/
+  └── SKILL.md
+fix-pr-reviews/
+  └── SKILL.md
+handoff/
+  ├── SKILL.md
+  ├── prompts/       # extraction + convention detection prompts
+  ├── eval/          # blind eval harness (SKILL.md + grading rubric)
+  ├── scripts/       # JSONL preprocessor
+  └── tests/         # fixtures for eval
+scope-repo/
+  ├── SKILL.md
+  ├── scopework      # standalone CLI wrapper
+  └── install.sh
 ```
 
 Each skill is self-contained in its directory. The `SKILL.md` has YAML frontmatter (`name`, `description`, `allowed-tools`) and a markdown body with the full protocol Claude follows when the skill is invoked.

@@ -20,7 +20,7 @@ Read all scorecards in `handoff/tests/output/eval/*-scorecard.md`. If all 4 exis
 
 ### Step 2: Run Blind Eval
 
-For each fixture, dispatch TWO agents sequentially:
+For each fixture, dispatch two agents (extractor first, then grader once extraction completes):
 
 **Extractor agent** (blind — no access to rubric, prior outputs, or scorecards):
 ```
@@ -54,7 +54,7 @@ STEP 3: Apply the grading rubric to the extraction output below. Produce ONLY
 Do NOT read any other files.
 ```
 
-Run all 4 extractor agents in parallel. Then run all 4 grader agents in parallel.
+Dispatch all extractor agents concurrently. Once all complete, dispatch all grader agents concurrently.
 
 Save results to `handoff/tests/output/eval/{fixture-name}-extraction.md` and `{fixture-name}-scorecard.md`.
 

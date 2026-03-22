@@ -19,7 +19,7 @@ You are reading a preprocessed session transcript. Your job is to extract a hand
 - If the transcript includes content pasted from prior sessions or other conversations, treat it as part of the context — decisions and failures from prior work are valid extraction targets.
 - Do NOT include API keys, passwords, connection strings, tokens, or secrets. If a decision references a secret, describe the decision without the value.
 - Normalize file paths to repo-relative form (e.g., `src/parser/index.ts` not `/Users/dev/project/src/parser/index.ts`). Strip absolute prefixes up to the repo root.
-- Target 600-1000 tokens total. Minimum 400 tokens — even short sessions need a thorough Summary covering what was done, why, and the specific code changes. If the session was long, prioritize recency and relevance over completeness.
+- For transcripts with substantial implementation work, target 600-1000 tokens total, but do not add padding or extrapolated content to hit a length target. For short or exploratory sessions with little concrete work, be as brief as necessary while still clearly describing what was done, why, and any specific changes. If the session was long, prioritize recency and relevance over completeness.
 
 ## Output Format
 
@@ -37,7 +37,7 @@ Produce EXACTLY this markdown structure. Do not add, remove, or rename sections.
 
 ## Do Not Retry
 <Bulleted list. What was tried or considered and failed or was explicitly ruled out.>
-- <what was attempted> — <specific failure mode or reason it was rejected>
+- Do not <what was attempted> — <specific failure mode or reason it was rejected>
 <This is the highest-value section. Look for:>
 <- Prior implementations or prototypes that were evaluated and found broken>
 <- Approaches that were discussed and explicitly rejected with reasons>

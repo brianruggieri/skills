@@ -102,3 +102,113 @@ def parse_metrics_from_stdout(stdout: str) -> tuple[str, str]:
 def _die(msg: str):
     print(f"ERROR: {msg}", file=sys.stderr)
     sys.exit(1)
+
+
+# ---------------------------------------------------------------------------
+# JSONL session metrics extraction
+# ---------------------------------------------------------------------------
+
+def extract_session_metrics(jsonl_path: str) -> dict:
+    """
+    Parse a Claude Code session JSONL and return aggregated metrics.
+    Returns {} if the file is missing or unreadable.
+    """
+    p = Path(jsonl_path)
+    if not p.exists():
+        return {}
+
+    tool_calls: dict[str, int] = {}
+    total_input = total_output = total_cache_read = total_cache_create = 0
+    turns = 0
+    timestamps: list[str] = []
+
+    try:
+        with open(p, encoding="utf-8", errors="replace") as f:
+            for line in f:
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    entry = json.loads(line)
+                except json.JSONDecodeError:
+                    continue
+
+                ts = entry.get("timestamp")
+                if ts:
+                    timestamps.append(ts)
+
+                if entry.get("type") != "assistant":
+                    continue
+
+                msg = entry.get("message", {})
+                usage = msg.get("usage", {})
+                total_input += usage.get("input_tokens", 0)
+                total_output += usage.get("output_tokens", 0)
+                total_cache_read += usage.get("cache_read_input_tokens", 0)
+                total_cache_create += usage.get("cache_creation_input_tokens", 0)
+                turns += 1
+
+                content = msg.get("content", [])
+                if isinstance(content, list):
+                    for block in content:
+                        if isinstance(block, dict) and block.get("type") == "tool_use":
+                            name = block.get("name", "unknown")
+                            tool_calls[name] = tool_calls.get(name, 0) + 1
+    except OSError:
+        return {}
+
+    duration_min = _compute_duration_min(timestamps)
+    total_tc = sum(tool_calls.values())
+
+    return {
+        "input_tokens": total_input,
+        "output_tokens": total_output,
+        "cache_read": total_cache_read,
+        "cache_create": total_cache_create,
+        "effective_tokens": total_input + total_output + total_cache_read + total_cache_create,
+        "tool_calls": tool_calls,
+        "total_tool_calls": total_tc,
+        "turns": turns,
+        "duration_min": duration_min,
+        "bash": tool_calls.get("Bash", 0),
+        "read": tool_calls.get("Read", 0),
+        "agent": tool_calls.get("Agent", 0),
+    }
+
+
+def _compute_duration_min(timestamps: list[str]) -> float | None:
+    """Return session duration in minutes from first to last timestamp."""
+    if len(timestamps) < 2:
+        return None
+    from datetime import datetime, timezone
+    fmt = "%Y-%m-%dT%H:%M:%SZ"
+    try:
+        t0 = datetime.strptime(timestamps[0], fmt).replace(tzinfo=timezone.utc)
+        t1 = datetime.strptime(timestamps[-1], fmt).replace(tzinfo=timezone.utc)
+        return round((t1 - t0).total_seconds() / 60, 1)
+    except ValueError:
+        return None
+
+
+def find_session_jsonl_for_worktree(worktree_path: str) -> str | None:
+    """
+    Find the most recent Claude Code session JSONL for a given worktree path.
+    Uses the same encoding as preprocess.py: path.replace('/', '-').replace('.', '-')
+    """
+    projects_dir = Path.home() / ".claude" / "projects"
+    if not projects_dir.is_dir():
+        return None
+
+    encoded = worktree_path.replace("/", "-").replace(".", "-")
+    project_dir = projects_dir / encoded
+    if not project_dir.is_dir():
+        return None
+
+    best_path, best_mtime = None, 0.0
+    for f in project_dir.glob("*.jsonl"):
+        if f.is_file():
+            mt = f.stat().st_mtime
+            if mt > best_mtime:
+                best_mtime = mt
+                best_path = str(f)
+    return best_path

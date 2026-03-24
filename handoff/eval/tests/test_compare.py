@@ -11,6 +11,7 @@ from compare_implementations import (
     classify_numstat_line,
     load_state,
     parse_metrics_from_stdout,
+    extract_session_metrics,
 )
 
 
@@ -121,3 +122,72 @@ class TestParseMetricsFromStdout:
         table, diff = parse_metrics_from_stdout(stdout)
         assert table == stdout
         assert diff == ""
+
+
+class TestExtractSessionMetrics:
+    def test_counts_tool_calls_by_name(self, tmp_path):
+        # Build a minimal JSONL with two tool_use blocks
+        entries = [
+            {"type": "assistant", "timestamp": "2026-01-01T00:00:00Z",
+             "message": {
+                 "usage": {"input_tokens": 10, "output_tokens": 5,
+                           "cache_read_input_tokens": 100, "cache_creation_input_tokens": 20},
+                 "content": [
+                     {"type": "tool_use", "name": "Bash"},
+                     {"type": "tool_use", "name": "Read"},
+                 ]
+             }},
+            {"type": "assistant", "timestamp": "2026-01-01T00:01:00Z",
+             "message": {
+                 "usage": {"input_tokens": 5, "output_tokens": 3,
+                           "cache_read_input_tokens": 50, "cache_creation_input_tokens": 0},
+                 "content": [
+                     {"type": "tool_use", "name": "Bash"},
+                 ]
+             }},
+        ]
+        jsonl = tmp_path / "session.jsonl"
+        jsonl.write_text("\n".join(json.dumps(e) for e in entries))
+
+        m = extract_session_metrics(str(jsonl))
+        assert m["tool_calls"]["Bash"] == 2
+        assert m["tool_calls"]["Read"] == 1
+        assert m["total_tool_calls"] == 3
+        assert m["turns"] == 2
+
+    def test_sums_tokens(self, tmp_path):
+        entries = [
+            {"type": "assistant", "timestamp": "2026-01-01T00:00:00Z",
+             "message": {
+                 "usage": {"input_tokens": 100, "output_tokens": 50,
+                           "cache_read_input_tokens": 1000, "cache_creation_input_tokens": 200},
+                 "content": []
+             }},
+        ]
+        jsonl = tmp_path / "session.jsonl"
+        jsonl.write_text(json.dumps(entries[0]))
+
+        m = extract_session_metrics(str(jsonl))
+        assert m["input_tokens"] == 100
+        assert m["output_tokens"] == 50
+        assert m["cache_read"] == 1000
+        assert m["cache_create"] == 200
+        assert m["effective_tokens"] == 100 + 50 + 1000 + 200
+
+    def test_computes_duration_seconds(self, tmp_path):
+        entries = [
+            {"type": "user", "timestamp": "2026-01-01T00:00:00Z", "message": {"content": "go"}},
+            {"type": "assistant", "timestamp": "2026-01-01T01:00:00Z",
+             "message": {"usage": {"input_tokens": 1, "output_tokens": 1,
+                                   "cache_read_input_tokens": 0, "cache_creation_input_tokens": 0},
+                         "content": []}},
+        ]
+        jsonl = tmp_path / "session.jsonl"
+        jsonl.write_text("\n".join(json.dumps(e) for e in entries))
+
+        m = extract_session_metrics(str(jsonl))
+        assert m["duration_min"] == pytest.approx(60.0, abs=0.1)
+
+    def test_missing_file_returns_empty(self):
+        m = extract_session_metrics("/nonexistent/path/session.jsonl")
+        assert m == {}

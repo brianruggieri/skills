@@ -8,6 +8,7 @@ allowed-tools:
   - Bash
   - Glob
   - Grep
+  - AskUserQuestion
 ---
 
 # Handoff
@@ -105,7 +106,45 @@ Handoff written to .claude/handoffs/<FILENAME>
   Token estimate: ~<N>
 ```
 
-### Phase 5: Knowledge Routing
+### Phase 5: Kickoff Prompt
+
+Generate a ready-to-use kickoff prompt that the fresh session receives as its first user message. The handoff document provides context (system prompt); the kickoff prompt provides action instructions.
+
+1. **Auto-detect** from the extracted handoff and project:
+   - Plan/spec file paths (from Key Files — files in `plans/`, `specs/`, `designs/` dirs or with plan/spec/design in the name)
+   - Test commands (from CLAUDE.md, `package.json`, or transcript references to pytest/jest/vitest/cargo test)
+   - Task structure from Next Steps (total count, completed, dependencies, parallelizable groups)
+   - Branch name and remote tracking status
+
+2. **Ask the user** for execution requirements:
+   > "What are your requirements for the build session? Examples: 'full effort, end with a PR', 'use sonnet for simple tasks', 'parallel where safe', 'deploy after'. Or 'default' for standard settings (subagent-driven + tests + PR)."
+
+   If the user says "default", "none", or skips: use subagent-driven development + run tests + create PR.
+
+3. **Read the kickoff template** from `prompts/kickoff.md` in the skill directory.
+
+4. **Generate the kickoff prompt** by combining auto-detected context with user requirements. Follow the template structure and rules.
+
+5. **Write the kickoff prompt** to two locations:
+
+   a. **Companion file** for the auto-launch command:
+      ```bash
+      KICKOFF_FILE=".claude/handoffs/${FILENAME%.md}.kickoff"
+      ```
+      Write the raw kickoff prompt text (no markdown fencing) to this file.
+
+   b. **Append to the handoff file** as a final section:
+      ````markdown
+      ## Kickoff Prompt
+
+      > Paste this as your first message in the fresh session, or use the auto-launch command below.
+
+      ```
+      <generated kickoff prompt>
+      ```
+      ````
+
+### Phase 6: Knowledge Routing
 
 If convention detection found any suggestions:
 
@@ -119,29 +158,104 @@ Present each suggestion individually. For each one, ask the user:
 **For memory updates:**
 Write any identified user preferences as memory updates (use the memory system directly).
 
-### Phase 6: Launch Instructions
+### Phase 7: Launch Instructions
 
-After all knowledge routing is complete, present the launch command:
+After all knowledge routing is complete, offer to auto-launch the build session in a new terminal window.
 
-```
-To start the build session:
-  claude --append-system-prompt-file .claude/handoffs/<FILENAME>
+1. **Detect terminal environment:**
+   ```bash
+   echo "TMUX=${TMUX:-}" "TERM_PROGRAM=${TERM_PROGRAM:-}"
+   ```
 
-Or in a new tmux window:
-  tmux new-window "claude --append-system-prompt-file .claude/handoffs/<FILENAME>"
-```
+2. **Determine launch method** using this priority cascade:
 
-If `--append-system-prompt-file` is not available, fall back to:
-```
-  claude --append-system-prompt "$(cat .claude/handoffs/<FILENAME>)"
-```
+   | Check | Terminal | Method |
+   |-------|----------|--------|
+   | `$TMUX` is set | tmux | `tmux new-window` |
+   | `$TERM_PROGRAM` = `iTerm.app` | iTerm2 | AppleScript via `osascript` |
+   | `$TERM_PROGRAM` = `Apple_Terminal` | Terminal.app | AppleScript via `osascript` |
+   | `$TERM_PROGRAM` = `kitty` | Kitty | `kitty @ launch` (requires remote control enabled) |
+   | `$TERM_PROGRAM` = `Alacritty` | Alacritty | `alacritty msg create-window` |
+   | anything else | — | Manual fallback |
+
+3. **Offer auto-launch** (if a supported terminal was detected):
+
+   > Ready to launch the build session in a new <terminal> window. This will:
+   > - Open a new window/tab
+   > - Start Claude with the handoff context as system prompt
+   > - Send the kickoff prompt as the first message
+   >
+   > Auto-launch? [y/n]
+
+   If **yes**, run the appropriate command:
+
+   **tmux:**
+   ```bash
+   KICKOFF_FILE=".claude/handoffs/${FILENAME%.md}.kickoff"
+   tmux new-window -n "handoff-${SLUG}" \
+     "cd $(pwd) && claude --append-system-prompt-file .claude/handoffs/${FILENAME} \"\$(cat ${KICKOFF_FILE})\""
+   ```
+
+   **iTerm2:**
+   ```bash
+   KICKOFF_FILE=".claude/handoffs/${FILENAME%.md}.kickoff"
+   CMD="cd \"$(pwd)\" && claude --append-system-prompt-file .claude/handoffs/${FILENAME} \"\$(cat \"${KICKOFF_FILE}\")\""
+   ESCAPED_CMD=$(printf '%s' "${CMD}" | sed 's/\\/\\\\/g; s/"/\\"/g')
+   osascript \
+     -e 'tell application "iTerm" to tell current window to create tab with default profile' \
+     -e "tell application \"iTerm\" to tell current session of current window to write text \"${ESCAPED_CMD}\""
+   ```
+
+   **Terminal.app:**
+   ```bash
+   KICKOFF_FILE=".claude/handoffs/${FILENAME%.md}.kickoff"
+   CMD="cd \"$(pwd)\" && claude --append-system-prompt-file .claude/handoffs/${FILENAME} \"\$(cat \"${KICKOFF_FILE}\")\""
+   ESCAPED_CMD=$(printf '%s' "${CMD}" | sed 's/\\/\\\\/g; s/"/\\"/g')
+   osascript -e "tell application \"Terminal\" to do script \"${ESCAPED_CMD}\""
+   ```
+
+   **Kitty:**
+   ```bash
+   KICKOFF_FILE=".claude/handoffs/${FILENAME%.md}.kickoff"
+   kitty @ launch --type=tab --cwd="$(pwd)" \
+     claude --append-system-prompt-file .claude/handoffs/${FILENAME} "$(cat "${KICKOFF_FILE}")"
+   ```
+
+   **Alacritty:**
+   ```bash
+   KICKOFF_FILE=".claude/handoffs/${FILENAME%.md}.kickoff"
+   alacritty msg create-window --working-directory "$(pwd)" \
+     -e claude --append-system-prompt-file .claude/handoffs/${FILENAME} "$(cat "${KICKOFF_FILE}")"
+   ```
+
+   Then confirm:
+   ```
+   Launched in <terminal>. The build session is running with full handoff context.
+   ```
+
+   If **no**, fall through to manual instructions below.
+
+4. **Manual fallback** (unsupported terminal, user declined, or launch failed):
+
+   ```
+   To start the build session:
+     claude --append-system-prompt-file .claude/handoffs/<FILENAME>
+
+   Then paste this kickoff prompt:
+     <show contents of .kickoff file>
+
+   Or as a single command:
+     claude --append-system-prompt-file .claude/handoffs/<FILENAME> "$(cat .claude/handoffs/<FILENAME%.md>.kickoff)"
+   ```
 
 ### Cleanup
 
-Remove the temporary transcript file:
+Remove temporary files:
 ```bash
 rm -f /tmp/handoff-transcript.md
 ```
+
+Note: Do NOT remove the `.kickoff` companion file — it is needed if the user launches later.
 
 ## Edge Cases
 

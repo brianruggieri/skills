@@ -199,31 +199,33 @@ After all knowledge routing is complete, offer to auto-launch the build session 
    **iTerm2:**
    ```bash
    KICKOFF_FILE=".claude/handoffs/${FILENAME%.md}.kickoff"
-   CMD="cd $(pwd) && claude --append-system-prompt-file .claude/handoffs/${FILENAME} \"\$(cat ${KICKOFF_FILE})\""
+   CMD="cd \"$(pwd)\" && claude --append-system-prompt-file .claude/handoffs/${FILENAME} \"\$(cat \"${KICKOFF_FILE}\")\""
+   ESCAPED_CMD=$(printf '%s' "${CMD}" | sed 's/\\/\\\\/g; s/"/\\"/g')
    osascript \
      -e 'tell application "iTerm" to tell current window to create tab with default profile' \
-     -e "tell application \"iTerm\" to tell current session of current window to write text \"${CMD}\""
+     -e "tell application \"iTerm\" to tell current session of current window to write text \"${ESCAPED_CMD}\""
    ```
 
    **Terminal.app:**
    ```bash
    KICKOFF_FILE=".claude/handoffs/${FILENAME%.md}.kickoff"
-   CMD="cd $(pwd) && claude --append-system-prompt-file .claude/handoffs/${FILENAME} \"\$(cat ${KICKOFF_FILE})\""
-   osascript -e "tell application \"Terminal\" to do script \"${CMD}\""
+   CMD="cd \"$(pwd)\" && claude --append-system-prompt-file .claude/handoffs/${FILENAME} \"\$(cat \"${KICKOFF_FILE}\")\""
+   ESCAPED_CMD=$(printf '%s' "${CMD}" | sed 's/\\/\\\\/g; s/"/\\"/g')
+   osascript -e "tell application \"Terminal\" to do script \"${ESCAPED_CMD}\""
    ```
 
    **Kitty:**
    ```bash
    KICKOFF_FILE=".claude/handoffs/${FILENAME%.md}.kickoff"
-   kitty @ launch --type=tab --cwd=$(pwd) \
-     claude --append-system-prompt-file .claude/handoffs/${FILENAME} "$(cat ${KICKOFF_FILE})"
+   kitty @ launch --type=tab --cwd="$(pwd)" \
+     claude --append-system-prompt-file .claude/handoffs/${FILENAME} "$(cat "${KICKOFF_FILE}")"
    ```
 
    **Alacritty:**
    ```bash
    KICKOFF_FILE=".claude/handoffs/${FILENAME%.md}.kickoff"
-   alacritty msg create-window --working-directory $(pwd) \
-     -e claude --append-system-prompt-file .claude/handoffs/${FILENAME} "$(cat ${KICKOFF_FILE})"
+   alacritty msg create-window --working-directory "$(pwd)" \
+     -e claude --append-system-prompt-file .claude/handoffs/${FILENAME} "$(cat "${KICKOFF_FILE}")"
    ```
 
    Then confirm:

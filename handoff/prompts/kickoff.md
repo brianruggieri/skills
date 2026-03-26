@@ -105,4 +105,3 @@ Read CLAUDE.md for project conventions. [1-2 critical conventions from the sessi
 - If the user didn't specify model tiers, omit that section entirely.
 - Always include a test step — detect the test command or use "run the test suite".
 - PR summary points should be derived from Decisions and Summary — what does a reviewer need to know?
-- Escape single quotes in the output (for shell safety in the auto-launch command).

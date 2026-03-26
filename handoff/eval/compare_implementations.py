@@ -44,7 +44,7 @@ def compute_derived_metrics(raw: dict) -> dict:
     return {
         "exploration_ratio": round((bash + read) / total, 2) if total else 0.0,
         "delegation_ratio": round(agent / total, 2) if total else 0.0,
-        "input_output_ratio": round(cache_read / output_tokens) if output_tokens else 0,
+        "input_output_ratio": f"{round(cache_read / output_tokens)}:1" if output_tokens else "0:1",
         "tokens_per_task": effective_tokens // task_count if task_count else None,
         "tokens_per_f2p": effective_tokens // f2p_count if f2p_count else None,
         "patch_efficiency": (lines_added + lines_removed) / f2p_count if f2p_count else None,
@@ -288,11 +288,11 @@ def compute_f2p_p2p(branch: str, worktree: str, python_bin: str | None) -> dict:
     P2P: run pytest in the worktree and count failures (requires worktree to exist).
     """
     if not Path(worktree).is_dir():
-        return {"f2p_count": None, "p2p_regressions": None, "tests_total": None}
+        return {"f2p_count": None, "p2p_regressions": None, "tests_passed": None}
 
     # F2P: count added `def test_` lines in test files
     numstat_output = run(
-        ["git", "diff", "--unified=0", f"main..{branch}", "--", "*/test_*.py", "*_test.py"],
+        ["git", "diff", "--unified=0", f"main..{branch}", "--", ":(glob)**/test_*.py", ":(glob)**/*_test.py"],
         cwd=worktree
     )
     f2p_count = sum(
@@ -312,16 +312,14 @@ def compute_f2p_p2p(branch: str, worktree: str, python_bin: str | None) -> dict:
         tests_passed = int(m.group(1)) if m else None
         m = re.search(r"(\d+) failed", output)
         p2p_regressions = int(m.group(1)) if m else 0
-        m = re.search(r"(\d+) passed", output)
-        tests_total = tests_passed
     else:
+        tests_passed = None
         p2p_regressions = None
-        tests_total = None
 
     return {
         "f2p_count": f2p_count,
         "p2p_regressions": p2p_regressions,
-        "tests_total": tests_total,
+        "tests_passed": tests_passed,
     }
 
 
@@ -378,7 +376,7 @@ def format_table(ma: dict, mb: dict) -> str:
         "",
         "── Test Results " + "─" * 41,
         f"{'Metric':<22}  {'With-Handoff':<14}  {'No-Handoff':<14}  Delta",
-        row("Tests passed",       ma.get("tests_total"),        mb.get("tests_total"),        pct=False),
+        row("Tests passed",       ma.get("tests_passed"),        mb.get("tests_passed"),        pct=False),
         row("  F2P (new tests)",  ma.get("f2p_count"),          mb.get("f2p_count"),          pct=False),
         row("  P2P regressions",  ma.get("p2p_regressions"),    mb.get("p2p_regressions"),    pct=False),
         row("Tokens / F2P test",  da.get("tokens_per_f2p"),     db.get("tokens_per_f2p")),

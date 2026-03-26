@@ -108,7 +108,9 @@ All `<computed>` fields are required and populated from git and pytest at runtim
 - **Tokens / F2P test:** `total_effective_tokens / f2p_count`
 - **Test/source ratio:** test lines changed / source lines changed, from `git diff --numstat` filtered by filename; computed separately from the full diff using `git diff --numstat main..<branch>`
 - **Patch efficiency:** `(lines_added + lines_removed) / f2p_count` — lower = more surgical
-- **Code churn:** lines revised within two weeks of initial write (from `git log --follow -p`)
+- **Code churn (not yet implemented):** intended definition is "lines revised within two weeks of initial write" (from `git log --follow -p`). The current `compare_implementations.py` does not compute or display this metric.
+
+Note: Some `<computed>` fields in the compare script's JSON output may legitimately be missing/`null` (for example, when worktrees or virtual environments are unavailable). Downstream consumers must treat these metrics as optional rather than required.
 
 F2P/P2P split and test/source ratio use `git diff --numstat` (separate command from full diff). Full diff is printed after `---DIFF---` sentinel.
 

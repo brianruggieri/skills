@@ -240,6 +240,6 @@ bug that all tests missed.
     "score_delta": "+2 (9 vs 7)",
     "quality_equivalent": false
   },
-  "key_finding": "Handoff reduced effective tokens by 41%, tool calls by 44%, AND prevented a correctness bug in ordering logic. The 2022-03-22 test showed efficiency gains; this test shows quality gains too."
+  "key_finding": "Handoff reduced effective tokens by 41%, tool calls by 44%, AND prevented a correctness bug in ordering logic. The 2026-03-22 test showed efficiency gains; this test shows quality gains too."
 }
 ```

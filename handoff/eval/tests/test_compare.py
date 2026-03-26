@@ -29,7 +29,7 @@ class TestComputeDerivedMetrics:
     def test_input_output_ratio(self):
         raw = {"cache_read": 7_738_405, "output_tokens": 30_118, "total_tool_calls": 63}
         m = compute_derived_metrics(raw)
-        assert round(m["input_output_ratio"], 0) == round(7_738_405 / 30_118, 0)
+        assert m["input_output_ratio"] == f"{round(7_738_405 / 30_118)}:1"
 
     def test_tokens_per_task(self):
         raw = {"effective_tokens": 7_768_652, "task_count": 6, "total_tool_calls": 63}

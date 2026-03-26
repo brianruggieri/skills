@@ -99,11 +99,13 @@ Strip `feat/` prefix from `--source-branch`. E.g., `feat/eligibility-hard-caps` 
 
 2. Locate `compare_implementations.py`:
    ```bash
-   COMPARE="$(dirname "$(realpath "$0")")/../eval/compare_implementations.py"
+   STATE_FILE=".claude/handoffs/eval-state.json"
+   REPO_ROOT="$(cd "$(dirname "$STATE_FILE")/../.." && pwd)"
+   COMPARE="$REPO_ROOT/handoff/eval/compare_implementations.py"
    ```
    Run it and capture stdout:
    ```bash
-   python "$COMPARE" --state-file .claude/handoffs/eval-state.json
+   python "$COMPARE" --state-file "$STATE_FILE"
    ```
 
 3. Split stdout on `---DIFF---` sentinel: everything before = metrics table; everything after = full diff.

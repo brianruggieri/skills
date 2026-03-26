@@ -39,12 +39,12 @@ gh pr view --json number,url --jq '.number' 2>/dev/null
 
 2. **Fetch all review comments** (Copilot, human reviewers, bots):
    ```bash
-   gh api repos/{owner}/{repo}/pulls/{number}/comments --jq '.[] | {id: .id, path: .path, line: .line, body: .body, user: .user.login, in_reply_to_id: .in_reply_to_id}'
+   gh api repos/{owner}/{repo}/pulls/{number}/comments --paginate --jq '.[] | {id: .id, path: .path, line: .line, body: .body, user: .user.login, in_reply_to_id: .in_reply_to_id}'
    ```
 
 3. **Fetch PR reviews** (overall review status):
    ```bash
-   gh api repos/{owner}/{repo}/pulls/{number}/reviews --jq '.[] | {user: .user.login, state: .state, body: .body}'
+   gh api repos/{owner}/{repo}/pulls/{number}/reviews --paginate --jq '.[] | {user: .user.login, state: .state, body: .body}'
    ```
 
 4. **Check CI status:**
@@ -54,10 +54,25 @@ gh pr view --json number,url --jq '.number' 2>/dev/null
 
 5. **Ensure working on the correct branch:**
    ```bash
-   gh pr view <number> --json headRefName --jq '.headRefName'
-   git checkout <branch>
-   git pull origin <branch>
+   gh pr view <number> --json headRefName,baseRefName --jq '"head: " + .headRefName + "\nbase: " + .baseRefName'
+   git checkout <head-branch>
+   git pull --no-rebase origin <head-branch>
    ```
+
+6. **Ensure working tree is clean, then sync with base branch** to avoid working on stale code:
+   ```bash
+   # Check for uncommitted changes
+   git status --porcelain
+   ```
+   If there are uncommitted changes, either commit them or stash them (`git stash push -m "temp: pre-base-sync"`) before continuing.
+
+   ```bash
+   git fetch origin <base-branch>
+   git merge origin/<base-branch> --no-edit
+   ```
+   - If the merge is clean, continue to Phase 2.
+   - If there are conflicts, resolve them now using the process in Phase 6 step 4, run tests, and commit the merge before proceeding.
+   - If the conflict is too complex to resolve confidently, ask the user before continuing.
 
 ### Phase 2: Categorize Comments
 
@@ -107,13 +122,12 @@ After all fixes:
    ```
    (Adapt to project's lint tooling.)
 
-3. **Check for merge conflicts:**
+3. **Check for merge conflicts** (do not merge yet — review fixes are uncommitted):
    ```bash
    git fetch origin <base-branch>
-   git merge-base --is-ancestor origin/<base-branch> HEAD && echo "Up to date" || echo "Needs rebase"
+   git merge-base --is-ancestor origin/<base-branch> HEAD && echo "Up to date" || echo "Needs merge after commit"
    ```
-
-4. **If merge conflicts exist:** resolve them, run tests again, commit the resolution.
+   Note the result. The actual base-branch merge happens in Phase 6 after review fixes are committed, so the working tree stays clean.
 
 ### Phase 5: Manual Test Plan Verification
 
@@ -143,22 +157,72 @@ If there are no manual test items, skip this phase.
    )"
    ```
 
-3. **Push:**
+3. **Sync with base branch** (now safe — review fixes are committed):
+   ```bash
+   git fetch origin <base-branch>
+   git merge origin/<base-branch> --no-edit
+   ```
+   If already up to date, skip to step 5. If conflicts arise, proceed to step 4.
+
+4. **If merge conflicts arise,** resolve them systematically:
+
+   a. **List conflicted files:**
+      ```bash
+      git diff --name-only --diff-filter=U
+      ```
+
+   b. **For each conflicted file:**
+      - Read the file and understand both sides of the conflict
+      - If the conflict is in a file also touched by review fixes, preserve the review fixes while incorporating base branch changes
+      - Edit to resolve all conflict markers (`<<<<<<<`, `=======`, `>>>>>>>`)
+      - Stage the resolved file:
+        ```bash
+        git add <file>
+        ```
+
+   c. **After all conflicts are resolved:**
+      ```bash
+      git commit --no-edit
+      ```
+
+   d. **Re-run the full test suite** to verify nothing broke in the merge resolution.
+
+   e. **If a conflict is too complex** (e.g., large structural changes on both sides), ask the user before resolving. Show the conflicted files and both sides of the diff.
+
+   **Strategy:** Always use `merge`, never `rebase` — rebase rewrites history that reviewers have already seen. The merge commit makes the integration point visible in history.
+
+5. **Push:**
    ```bash
    git push origin <branch>
    ```
 
 ### Phase 7: Resolve Review Threads
 
-After all fixes are pushed, resolve each review thread on GitHub via GraphQL:
+After all fixes are pushed, reply to each comment and resolve threads on GitHub:
 
-1. **Fetch unresolved thread IDs:**
+1. **Reply to each addressed comment** with what was done:
    ```bash
+   gh api repos/{owner}/{repo}/pulls/{number}/comments/{comment_id}/replies \
+     -f body="Fixed — <brief description of what was changed>"
+   ```
+
+   For skipped comments, reply explaining why:
+   ```bash
+   gh api repos/{owner}/{repo}/pulls/{number}/comments/{comment_id}/replies \
+     -f body="Skipped — <reason: inapplicable, already resolved in discussion, or disagree with rationale>"
+   ```
+
+   Keep replies concise — one sentence per reply.
+
+2. **Fetch unresolved thread IDs** (paginate to catch all threads):
+   ```bash
+   # First page
    gh api graphql -f query='
    query {
      repository(owner: "<owner>", name: "<repo>") {
        pullRequest(number: <number>) {
-         reviewThreads(first: 50) {
+         reviewThreads(first: 100) {
+           pageInfo { hasNextPage endCursor }
            nodes {
              id
              isResolved
@@ -169,10 +233,35 @@ After all fixes are pushed, resolve each review thread on GitHub via GraphQL:
          }
        }
      }
-   }' --jq '.data.repository.pullRequest.reviewThreads.nodes[] | select(.isResolved == false) | .id'
+   }' --jq '.data.repository.pullRequest.reviewThreads'
+   ```
+   If `pageInfo.hasNextPage` is true, fetch additional pages using `after: "<endCursor>"`:
+   ```bash
+   gh api graphql -f query='
+   query {
+     repository(owner: "<owner>", name: "<repo>") {
+       pullRequest(number: <number>) {
+         reviewThreads(first: 100, after: "<endCursor>") {
+           pageInfo { hasNextPage endCursor }
+           nodes {
+             id
+             isResolved
+             comments(first: 1) {
+               nodes { body }
+             }
+           }
+         }
+       }
+     }
+   }' --jq '.data.repository.pullRequest.reviewThreads'
+   ```
+   Repeat until `hasNextPage` is false. Collect all unresolved thread IDs:
+   ```bash
+   # From each page's output, filter unresolved threads:
+   # .nodes[] | select(.isResolved == false) | .id
    ```
 
-2. **Resolve each thread** that was addressed:
+3. **Resolve each thread** that was addressed:
    ```bash
    gh api graphql -f query='
    mutation {

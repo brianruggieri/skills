@@ -39,12 +39,12 @@ gh pr view --json number,url --jq '.number' 2>/dev/null
 
 2. **Fetch all review comments** (Copilot, human reviewers, bots):
    ```bash
-   gh api repos/{owner}/{repo}/pulls/{number}/comments --jq '.[] | {id: .id, path: .path, line: .line, body: .body, user: .user.login, in_reply_to_id: .in_reply_to_id}'
+   gh api repos/{owner}/{repo}/pulls/{number}/comments --paginate --jq '.[] | {id: .id, path: .path, line: .line, body: .body, user: .user.login, in_reply_to_id: .in_reply_to_id}'
    ```
 
 3. **Fetch PR reviews** (overall review status):
    ```bash
-   gh api repos/{owner}/{repo}/pulls/{number}/reviews --jq '.[] | {user: .user.login, state: .state, body: .body}'
+   gh api repos/{owner}/{repo}/pulls/{number}/reviews --paginate --jq '.[] | {user: .user.login, state: .state, body: .body}'
    ```
 
 4. **Check CI status:**
@@ -54,10 +54,19 @@ gh pr view --json number,url --jq '.number' 2>/dev/null
 
 5. **Ensure working on the correct branch:**
    ```bash
-   gh pr view <number> --json headRefName --jq '.headRefName'
-   git checkout <branch>
-   git pull origin <branch>
+   gh pr view <number> --json headRefName,baseRefName --jq '.headRefName + " " + .baseRefName'
+   git checkout <head-branch>
+   git pull origin <head-branch>
    ```
+
+6. **Sync with base branch** to avoid working on stale code:
+   ```bash
+   git fetch origin <base-branch>
+   git merge origin/<base-branch> --no-edit
+   ```
+   - If the merge is clean, continue to Phase 2.
+   - If there are conflicts, resolve them now using the process in Phase 4 step 4, run tests, and commit the merge before proceeding.
+   - If the conflict is too complex to resolve confidently, ask the user before continuing.
 
 ### Phase 2: Categorize Comments
 
@@ -107,13 +116,39 @@ After all fixes:
    ```
    (Adapt to project's lint tooling.)
 
-3. **Check for merge conflicts:**
+3. **Sync with base branch** (may have moved while fixing):
    ```bash
    git fetch origin <base-branch>
-   git merge-base --is-ancestor origin/<base-branch> HEAD && echo "Up to date" || echo "Needs rebase"
+   git merge origin/<base-branch> --no-edit
    ```
+   If already up to date, continue. If conflicts arise, proceed to step 4.
 
-4. **If merge conflicts exist:** resolve them, run tests again, commit the resolution.
+4. **If merge conflicts arise,** resolve them systematically:
+
+   a. **List conflicted files:**
+      ```bash
+      git diff --name-only --diff-filter=U
+      ```
+
+   b. **For each conflicted file:**
+      - Read the file and understand both sides of the conflict
+      - If the conflict is in a file also touched by review fixes, preserve the review fixes while incorporating base branch changes
+      - Edit to resolve all conflict markers (`<<<<<<<`, `=======`, `>>>>>>>`)
+      - Stage the resolved file:
+        ```bash
+        git add <file>
+        ```
+
+   c. **After all conflicts are resolved:**
+      ```bash
+      git commit --no-edit
+      ```
+
+   d. **Re-run the full test suite** to verify nothing broke in the merge resolution.
+
+   e. **If a conflict is too complex** (e.g., large structural changes on both sides), ask the user before resolving. Show the conflicted files and both sides of the diff.
+
+   **Strategy:** Always use `merge`, never `rebase` — rebase rewrites history that reviewers have already seen. The merge commit makes the integration point visible in history.
 
 ### Phase 5: Manual Test Plan Verification
 
@@ -150,9 +185,23 @@ If there are no manual test items, skip this phase.
 
 ### Phase 7: Resolve Review Threads
 
-After all fixes are pushed, resolve each review thread on GitHub via GraphQL:
+After all fixes are pushed, reply to each comment and resolve threads on GitHub:
 
-1. **Fetch unresolved thread IDs:**
+1. **Reply to each addressed comment** with what was done:
+   ```bash
+   gh api repos/{owner}/{repo}/pulls/{number}/comments/{comment_id}/replies \
+     -f body="Fixed — <brief description of what was changed>"
+   ```
+
+   For skipped comments, reply explaining why:
+   ```bash
+   gh api repos/{owner}/{repo}/pulls/{number}/comments/{comment_id}/replies \
+     -f body="Skipped — <reason: inapplicable, already resolved in discussion, or disagree with rationale>"
+   ```
+
+   Keep replies concise — one sentence per reply.
+
+2. **Fetch unresolved thread IDs:**
    ```bash
    gh api graphql -f query='
    query {
@@ -172,7 +221,7 @@ After all fixes are pushed, resolve each review thread on GitHub via GraphQL:
    }' --jq '.data.repository.pullRequest.reviewThreads.nodes[] | select(.isResolved == false) | .id'
    ```
 
-2. **Resolve each thread** that was addressed:
+3. **Resolve each thread** that was addressed:
    ```bash
    gh api graphql -f query='
    mutation {

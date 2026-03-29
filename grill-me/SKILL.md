@@ -3,6 +3,7 @@ name: grill-me
 description: Interview the user relentlessly about a plan or design until every branch of the decision tree is resolved. Use when user wants to stress-test a proposal, get grilled on their design, or mentions "grill me".
 allowed-tools:
   - Read
+  - Write
   - Grep
   - Glob
   - Bash
@@ -115,7 +116,7 @@ If a later answer reopens a previously resolved branch, unmark it, explain why, 
 When ALL branches in the risk tree are marked `[x]` or `[!]`:
 
 **Step 1: Write the Decision Log**
-Write a structured document to `.claude/grill-me-<topic>-<date>.md`.
+Write a structured document to `.claude/grill-me-<slugified-topic>-<YYYYMMDD-HHMMSS>.md`, where `<slugified-topic>` is a sanitized/slugified version of the topic (e.g., strip path separators and non-filename-safe characters). The timestamp ensures each session gets its own file — never overwrite a prior session's log.
 
 The decision log serves two audiences: (1) the user reviewing decisions, and (2) downstream plan-writing agents that need self-contained context. Structure it for both.
 
@@ -190,7 +191,7 @@ One agent writes the coordination plan. Its prompt:
 ```
 You are writing a lead coordination plan for a set of implementation decisions.
 
-Decision log: <path to .claude/grill-me-<topic>-<date>.md>
+Decision log: <path to .claude/grill-me-<topic>-<YYYYMMDD-HHMMSS>.md>
 
 Read the full decision log. Your job:
 1. Map dependencies between decisions (which must complete before others can start)
@@ -213,7 +214,7 @@ You are writing an implementation plan for a single decision from a grill sessio
 <decision text, rationale, rejected alternatives, key files, codebase findings — copied verbatim from the decision log>
 
 ## Full Context
-Decision log: <path to .claude/grill-me-<topic>-<date>.md>
+Decision log: <path to .claude/grill-me-<topic>-<YYYYMMDD-HHMMSS>.md>
 Read the full log for cross-cutting context, constraints, and the "Do Not Retry" section.
 
 ## Plan Format

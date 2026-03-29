@@ -116,7 +116,7 @@ If a later answer reopens a previously resolved branch, unmark it, explain why, 
 When ALL branches in the risk tree are marked `[x]` or `[!]`:
 
 **Step 1: Write the Decision Log**
-Write a structured document to `.claude/grill-me-<topic>-<YYYYMMDD-HHMMSS>.md`. The timestamp ensures each session gets its own file — never overwrite a prior session's log.
+Write a structured document to `.claude/grill-me-<slugified-topic>-<YYYYMMDD-HHMMSS>.md`, where `<slugified-topic>` is a sanitized/slugified version of the topic (e.g., strip path separators and non-filename-safe characters). The timestamp ensures each session gets its own file — never overwrite a prior session's log.
 
 The decision log serves two audiences: (1) the user reviewing decisions, and (2) downstream plan-writing agents that need self-contained context. Structure it for both.
 

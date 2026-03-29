@@ -83,7 +83,7 @@ def extract_prompts(sessions_dir: str) -> list[str]:
 	# Filter out agent/worktree session dirs
 	files = [
 		f for f in files
-		if "worktree" not in f and "agent" not in os.path.dirname(f).split("/")[-1]
+		if "worktree" not in f and "agent" not in os.path.basename(os.path.dirname(f))
 	]
 
 	prompts = []

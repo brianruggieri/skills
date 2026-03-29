@@ -154,12 +154,15 @@ def main():
 	print(f"Size: {os.path.getsize(args.output) / 1024:.0f} KB")
 
 	if args.stats:
-		lengths = sorted(len(p) for p in prompts)
-		print(f"\nLength distribution:")
-		print(f"  Shortest: {lengths[0]} chars")
-		print(f"  Median: {lengths[len(lengths) // 2]} chars")
-		print(f"  90th pct: {lengths[int(len(lengths) * 0.9)]} chars")
-		print(f"  Longest: {lengths[-1]} chars")
+		if not prompts:
+			print("\nNo prompts extracted; skipping stats.")
+		else:
+			lengths = sorted(len(p) for p in prompts)
+			print(f"\nLength distribution:")
+			print(f"  Shortest: {lengths[0]} chars")
+			print(f"  Median: {lengths[len(lengths) // 2]} chars")
+			print(f"  90th pct: {lengths[int(len(lengths) * 0.9)]} chars")
+			print(f"  Longest: {lengths[-1]} chars")
 
 
 if __name__ == "__main__":

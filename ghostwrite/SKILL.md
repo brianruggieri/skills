@@ -20,7 +20,7 @@ Write text in the user's authentic voice. Two modes: **build** a voice profile f
 
 When invoked, check for an existing voice profile:
 
-1. Check project memory: `<project>/.claude/*/memory/voice_profile*.md`
+1. Check project memory: `~/.claude/projects/*/memory/voice-profile.md`
 2. Check home: `~/.claude/voice-profile.md`
 
 If found, enter **Write Mode**. If not found, enter **Build Mode**.
@@ -39,7 +39,7 @@ Build a quantitative voice profile from the user's Claude Code session logs.
 
 Run the corpus extraction script bundled with this skill.
 
-Find the script path by searching for `write-voice/scripts/extract-corpus.py` in common locations (`~/git/skills`, `~/.claude/skills`). Then run:
+Find the script path by searching for `ghostwrite/scripts/extract-corpus.py` in common locations (`~/git/skills`, `~/.claude/skills`). Then run:
 
 ```bash
 python3 <skill-dir>/scripts/extract-corpus.py --output /tmp/voice-corpus.txt --stats
@@ -114,7 +114,7 @@ If the current project has a memory directory with MEMORY.md, add a pointer:
 Also copy or symlink the profile into the project memory if it was written to `~/.claude/`.
 
 Tell the user:
-> "Voice profile v<N> saved. <prompt count> prompts analyzed. Invoke `/write-voice` with a writing task to use it."
+> "Voice profile v<N> saved. <prompt count> prompts analyzed. Invoke `/ghostwrite` with a writing task to use it."
 
 ---
 

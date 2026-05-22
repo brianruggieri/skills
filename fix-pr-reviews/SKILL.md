@@ -203,25 +203,38 @@ shell-script abort — the surrounding code keeps running):
 validate_comment_path() {
   local path="$1"
 
-  # Reject control characters (including newlines, which would let later
-  # components escape per-line splitting) before any other check.
-  case "$path" in
-    *[$'\n\r\t\0\b']* ) echo "control chars in path: $path" >&2; return 1 ;;
-  esac
+  # Resolve the PR's repo root locally. If git fails or returns nothing,
+  # the validator is in an unknown state — refuse rather than letting the
+  # symlink check run against /$cur (which would silently pass).
+  local repo_root
+  repo_root="$(git rev-parse --show-toplevel 2>/dev/null)" || true
+  if [ -z "$repo_root" ] || [ ! -d "$repo_root" ]; then
+    echo "validate_comment_path: cannot resolve repo root" >&2
+    return 1
+  fi
+
+  # Reject ANY ASCII control character (\x00..\x1F plus DEL). LC_ALL=C
+  # forces byte-class semantics so [[:cntrl:]] doesn't surprise us on
+  # locales that interpret it differently. The escape character (ESC,
+  # 0x1B) was the prior gap.
+  if LC_ALL=C [[ "$path" =~ [[:cntrl:]] ]]; then
+    echo "control chars in path: $path" >&2
+    return 1
+  fi
 
   # Reject absolutes, traversals, home expansions
   case "$path" in
     /*|*..*|~*) echo "unsafe path shape: $path" >&2; return 1 ;;
   esac
 
-  # Lstat each component as we walk in. `find -type l` catches symlinks
-  # regardless of target.
+  # Lstat each component as we walk in. -L catches symlinks regardless
+  # of target.
   local cur=""
   local IFS=/
   for p in $path; do
     [ -z "$p" ] && continue
     cur="${cur:+$cur/}$p"
-    local abs="$REPO_ROOT/$cur"
+    local abs="$repo_root/$cur"
     if [ -L "$abs" ]; then
       echo "comment references symlinked component: $abs" >&2
       return 1

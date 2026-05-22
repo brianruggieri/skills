@@ -213,18 +213,22 @@ validate_comment_path() {
     return 1
   fi
 
-  # Reject ANY ASCII control character (\x00..\x1F plus DEL). We use
-  # `tr -cd '[:cntrl:]'` to keep ONLY control bytes and then count them
-  # with `wc -c`. Two earlier attempts were wrong:
+  # Reject ANY ASCII control character (\x01..\x1F plus \x7F DEL). We
+  # use `tr -cd '[:cntrl:]'` to keep ONLY control bytes and then count
+  # them with `wc -c`. Two earlier attempts were wrong:
   #   - `LC_ALL=C [[ "$path" =~ [[:cntrl:]] ]]` doesn't work because
   #     `[[` is a Bash keyword, not a command, so the LC_ALL prefix has
-  #     no effect; worse, Bash's regex `[[:cntrl:]]` does not reliably
+  #     no effect; Bash's own regex `[[:cntrl:]]` also does not reliably
   #     match newline in default locales.
   #   - `printf '%s' "$path" | grep -q '[[:cntrl:]]'` misses embedded
   #     newlines because grep treats them as line separators, not
   #     content.
   # The tr+wc pattern is byte-oriented and catches every control byte
-  # including \n, \t, \r, \0, \033 (ESC), and \177 (DEL).
+  # we can actually receive: \n, \t, \r, \033 (ESC), \177 (DEL), and
+  # everything in 0x01-0x1F. (NUL / \0 isn't listed because Bash
+  # variables can't carry NUL — the shell truncates the value at the
+  # NUL byte before this function sees it. Filesystem paths can't
+  # contain NUL either, so this is fine.)
   local _ctrl_count
   _ctrl_count=$(printf '%s' "$path" | LC_ALL=C tr -cd '[:cntrl:]' | wc -c | tr -d ' ')
   if [ "$_ctrl_count" != "0" ]; then
@@ -239,12 +243,22 @@ validate_comment_path() {
 
   # Lstat each component as we walk in. -L catches symlinks regardless
   # of target.
-  local cur=""
-  local IFS=/
-  for p in $path; do
+  #
+  # Globbing must be disabled around the split — `for p in $word` does
+  # both word-splitting AND pathname expansion, so a literal component
+  # like `[a]` would expand to `a` if a file named `a` exists, and the
+  # symlink guard would inspect the wrong component. Use `read -r -a`
+  # into an array (which never pathname-expands) and walk that.
+  local cur="" abs
+  local parts=()
+  local _old_ifs="$IFS"
+  IFS=/ read -r -a parts <<< "$path"
+  IFS="$_old_ifs"
+  local p
+  for p in "${parts[@]}"; do
     [ -z "$p" ] && continue
     cur="${cur:+$cur/}$p"
-    local abs="$repo_root/$cur"
+    abs="$repo_root/$cur"
     if [ -L "$abs" ]; then
       echo "comment references symlinked component: $abs" >&2
       return 1

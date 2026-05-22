@@ -6,6 +6,17 @@
 set -euo pipefail
 cd "$(git rev-parse --show-toplevel)"
 
+# Refuse to run outside the skills repo. --dangerously-skip-permissions
+# below disables all guardrails, so we double-check we're in the project
+# this script was built for (handoff/eval/RALPH-PROMPT.md being present is
+# the strongest indicator), not some unrelated repo the user happened to cd
+# into.
+if [ ! -f "handoff/eval/RALPH-PROMPT.md" ] || [ ! -f "handoff/SKILL.md" ]; then
+	echo "Refusing to run: this script is for the 'skills' repo only." >&2
+	echo "Expected handoff/eval/RALPH-PROMPT.md and handoff/SKILL.md at repo root." >&2
+	exit 1
+fi
+
 MAX_ITERATIONS="${1:-10}"
 PROMPT_FILE="handoff/eval/RALPH-PROMPT.md"
 SCORECARD_DIR="handoff/tests/output/eval"

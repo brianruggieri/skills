@@ -73,17 +73,42 @@ gh pr view --json number,url --jq '.number' 2>/dev/null
 
 ### Phase 1: Gather Context
 
-1. **Fetch PR metadata:**
+1. **Fetch PR metadata** — including the trust signals that determine
+   whether running this PR's tests is safe. `isCrossRepository` and
+   `headRepositoryOwner.login` tell you if the head branch lives on a fork
+   (in which case its contents are attacker-controlled); `author.login`
+   tells you which GitHub user opened it.
    ```bash
-   gh pr view <number> --json title,body,state,mergeable,mergeStateStatus,baseRefName,headRefName,statusCheckRollup,reviewDecision
+   gh pr view <number> --json title,body,state,mergeable,mergeStateStatus,baseRefName,headRefName,headRepositoryOwner,isCrossRepository,author,statusCheckRollup,reviewDecision
    ```
+   If `gh` fails or the fork/author fields are missing for any reason,
+   treat the PR as untrusted by default — do not run project tests until
+   the user explicitly approves.
 
-2. **Fetch all review comments** (Copilot, human reviewers, bots). Cap
-   pagination at 50 pages — if a PR exceeds that, stop and tell the user;
-   do not silently keep fetching:
+2. **Fetch all review comments** (Copilot, human reviewers, bots). The 50-
+   page cap is enforced via a bounded loop, not `--paginate` (which would
+   silently fetch every page). Page-by-page lets you actually stop:
    ```bash
-   gh api repos/{owner}/{repo}/pulls/{number}/comments --paginate --jq '.[] | {id: .id, path: .path, line: .line, body: .body, user: .user.login, in_reply_to_id: .in_reply_to_id}'
+   page=1
+   max_pages=50
+   while [ "$page" -le "$max_pages" ]; do
+     out=$(gh api "repos/{owner}/{repo}/pulls/{number}/comments?per_page=100&page=$page" \
+       --jq '.[] | {id, path, line, body, user: .user.login, in_reply_to_id}')
+     [ -z "$out" ] && break
+     printf '%s\n' "$out"
+     # If the page returned fewer than 100 items, we're done.
+     count=$(printf '%s\n' "$out" | wc -l | tr -d ' ')
+     [ "$count" -lt 100 ] && break
+     page=$((page + 1))
+   done
+   if [ "$page" -gt "$max_pages" ]; then
+     echo "WARNING: hit ${max_pages}-page comment cap; PR has more comments than processed." >&2
+     # Stop and surface to the user; do not proceed silently.
+   fi
    ```
+   Same pattern applies to fetching reviews and review-thread pages in
+   later phases — never use `--paginate` on attacker-influenceable
+   resources, always cap explicitly.
 
 3. **Fetch PR reviews** (overall review status):
    ```bash
@@ -95,16 +120,25 @@ gh pr view --json number,url --jq '.number' 2>/dev/null
    gh pr checks <number> --json name,state,conclusion
    ```
 
-5. **Ensure working on the correct branch.** First validate the branch
-   names against `^[A-Za-z0-9][A-Za-z0-9._/-]{0,254}$` before using them in
-   any shell command. Use `--` to terminate option parsing so a hostile
-   ref starting with `-` cannot be interpreted as a flag.
+5. **Ensure working on the correct branch.** Validate every PR-derived ref
+   with `git check-ref-format --branch` — that is git's own validator and
+   it catches things a hand-rolled regex misses (`..`, trailing `.`,
+   `.lock`, leading `-`, embedded `\`, control chars). If validation
+   fails, refuse to proceed and surface the bad ref to the user.
    ```bash
    gh pr view <number> --json headRefName,baseRefName --jq '"head: " + .headRefName + "\nbase: " + .baseRefName'
-   # Validate <head-branch> matches the regex above, then:
-   git checkout -- "<head-branch>"
-   git pull --no-rebase origin -- "<head-branch>"
+   # Validate. If either fails check-ref-format, stop here.
+   git check-ref-format --branch "$head_branch" >/dev/null || { echo "Bad head ref: $head_branch" >&2; exit 1; }
+   git check-ref-format --branch "$base_branch" >/dev/null || { echo "Bad base ref: $base_branch" >&2; exit 1; }
+   # Switch branches with -- AFTER the branch name (separating refs from paths),
+   # but the branch name itself is the positional ref argument:
+   git checkout "$head_branch" --
+   git pull --no-rebase origin "$head_branch"
    ```
+   Note: `git checkout -- <name>` (with `--` BEFORE the name) is
+   path-checkout semantics, not branch-switch. The `--` separator goes
+   AFTER the branch name when you also want it to refuse interpreting
+   subsequent args as paths.
 
 6. **Ensure working tree is clean, then sync with base branch** to avoid working on stale code:
    ```bash
@@ -140,7 +174,31 @@ line to understand the full context before deciding how to fix it.
 - Reject paths containing `..` or `~`.
 - Resolve the path relative to the PR's repo root and confirm the resolved
   path is still inside that repo (no traversal out).
-- Reject if the resolved path is a symlink.
+- Reject if ANY component along the resolved path is a symlink — not just
+  the leaf. A symlink at `<repo>/foo` redirecting into `~/.ssh/` lets a
+  comment-supplied `foo/id_rsa` slip past a leaf-only check. Walk each
+  component with `lstat` (or, in shell, `find <component> -maxdepth 0
+  -type l` — `-type l` catches symlinks regardless of target).
+
+A practical implementation:
+```bash
+# Reject before resolving
+case "$path" in
+  /*|*..*|~*) return 1 ;;
+esac
+# Lstat each component as we walk in
+cur=""
+IFS=/ read -r -a parts <<< "$path"
+for p in "${parts[@]}"; do
+  [ -z "$p" ] && continue
+  cur="${cur:+$cur/}$p"
+  abs="$REPO_ROOT/$cur"
+  if [ -L "$abs" ]; then
+    echo "comment references symlinked component: $abs" >&2
+    return 1
+  fi
+done
+```
 
 If validation fails, skip the comment and log it as a finding ("comment
 references unsafe path: <path>") in your final report — do not silently
@@ -157,10 +215,17 @@ For each comment, in priority order:
    ```bash
    python -m pytest tests/test_<module>.py -v --tb=short
    ```
-   If the PR head branch is from a fork or any author you do not personally
-   trust, confirm with the user before running project tests for the first
-   time. Tests can run arbitrary code (conftest.py, fixtures, post-install
-   hooks).
+   Before the FIRST test invocation in this session, check the PR-trust
+   gate from the metadata fetched in Phase 1:
+   ```text
+   if isCrossRepository == true  →  TREAT AS UNTRUSTED, confirm with user
+   if headRepositoryOwner != base-repo owner  →  TREAT AS UNTRUSTED
+   if author.login is unfamiliar to the user  →  ASK
+   if any of those fields are missing/unknown  →  TREAT AS UNTRUSTED (default-deny)
+   ```
+   Only after the user explicitly says yes do you run project tests/lints.
+   Tests can run arbitrary code (conftest.py, fixtures, post-install
+   hooks, build scripts).
 5. **Track progress** — mentally check off each comment as resolved
 
 When fixing, follow these rules:

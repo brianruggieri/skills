@@ -398,6 +398,11 @@ If user confirms:
 - Body includes: scope, dependencies ("Blocked by #{N}"), success criteria, resolved design decision
 - Labels: `wave-{N}` + type (`refactor`, `feature`, `testing`, `cleanup`, `infra`, `docs`)
 - Milestones: one per execution wave (create if needed)
+- **Pass `--repo` explicitly** on every `gh issue create` call. Your CWD is
+  `{SESSION_DIR}`, not the target repo, so `gh` cannot infer the repo from
+  git context. Resolve the identifier once:
+  `gh repo view "{REPO_ROOT}" --json nameWithOwner --jq .nameWithOwner`
+  then use that on every create call.
 
 If `gh` unavailable or user declines:
 - Write `PLAN.md` to repo root with same content in markdown format

@@ -64,10 +64,28 @@ _REDACTORS: list[tuple[re.Pattern[str], str]] = [
         re.compile(r"\beyJ[A-Za-z0-9_-]{6,}\.[A-Za-z0-9_-]{6,}\.[A-Za-z0-9_-]{6,}\b"),
         "[REDACTED_JWT]",
     ),
-    # URL-embedded credentials
+    # URL-embedded credentials (web, file transfer, AND database connection
+    # strings — postgres://, mysql://, mongodb://, redis://, amqp://, etc.,
+    # which routinely contain real production passwords).
     (
-        re.compile(r"\b(https?|ftp|ssh|git\+ssh)://[^\s:@/]+:[^\s@/]+@"),
+        re.compile(
+            r"\b(https?|ftp|ftps|ssh|git\+ssh|sftp|"
+            r"postgres|postgresql|mysql|mariadb|mongodb|mongodb\+srv|"
+            r"redis|rediss|amqp|amqps|kafka|smb|cifs|sqlserver|jdbc:[a-z]+)"
+            r"://[^\s:@/]+:[^\s@/]+@"
+        ),
         r"\1://[REDACTED_URL_CRED]@",
+    ),
+    # PEM / OpenSSH private key blocks. These are multi-line; with re.DOTALL
+    # the `.+?` happily spans newlines until the matching END marker.
+    (
+        re.compile(
+            r"-----BEGIN (?:RSA |DSA |EC |OPENSSH |ENCRYPTED |PGP )?PRIVATE KEY-----"
+            r".+?"
+            r"-----END (?:RSA |DSA |EC |OPENSSH |ENCRYPTED |PGP )?PRIVATE KEY-----",
+            re.DOTALL,
+        ),
+        "[REDACTED_PRIVATE_KEY_BLOCK]",
     ),
     # API key prefixes (Anthropic/OpenAI/Stripe/Slack/GitHub/GitLab/Google/xAI)
     (
@@ -239,7 +257,9 @@ def find_session_jsonl() -> str:
 
     best_path, best_mtime = None, 0
     for proj_dir in projects_dir.iterdir():
-        if not proj_dir.is_dir():
+        # Refuse to descend into symlinked project dirs. is_dir() follows
+        # symlinks, so we need an explicit is_symlink() check first.
+        if proj_dir.is_symlink() or not proj_dir.is_dir():
             continue
         for f in proj_dir.glob("*.jsonl"):
             if f.is_file() and not f.is_symlink():
@@ -272,7 +292,10 @@ def get_git_root() -> str | None:
 
 
 def find_latest_jsonl(project_dir: Path) -> str | None:
-    if not project_dir.is_dir():
+    # Refuse to follow a symlinked project_dir. is_dir() follows symlinks
+    # by default; we want the parent itself to be a real directory before we
+    # search inside it.
+    if project_dir.is_symlink() or not project_dir.is_dir():
         return None
     best_path, best_mtime = None, 0
     for f in project_dir.glob("*.jsonl"):

@@ -248,23 +248,33 @@ After all knowledge routing is complete, offer to auto-launch the build session 
    >
    > Auto-launch? [y/n]
 
-   Before generating any launcher command, validate the working directory:
+   Before generating any launcher command, validate the working directory.
+   The validation must set a flag the launcher branches on — a bare echo
+   does nothing if the launcher still runs. Reject `$` and `\` along with
+   the obvious shell metacharacters, since the launchers below embed `$CWD`
+   into double-quoted strings that the second shell re-expands:
 
    ```bash
    CWD="$(pwd)"
+   CWD_OK=1
    case "$CWD" in
-     *[$'\n\r\t']* | *'`'* | *'$('* | *';'* | *'&'* | *'|'* | *'>'* | *'<'* | *'"'* | *"'"* )
-       echo "Refusing to auto-launch: working dir contains shell-unsafe chars."
-       # Fall through to manual instructions.
+     *[$'\n\r\t']* | *'`'* | *'$'* | *';'* | *'&'* | *'|'* | *'>'* | *'<'* \
+       | *'"'* | *"'"* | *'\'* | *'*'* | *'?'* )
+       CWD_OK=0
        ;;
    esac
+   if [ "$CWD_OK" = "0" ]; then
+     echo "Refusing to auto-launch: working dir contains shell-unsafe chars."
+     # Fall through to the manual fallback below; do NOT run the per-terminal
+     # launcher snippet.
+   fi
    ```
 
-   If the check fails, skip auto-launch and use the manual fallback. If it
-   passes, run the appropriate command. Note that all of the snippets below
-   embed `$CWD` and `${FILENAME}` (which is timestamp+slug, character-set
-   already constrained) into shell strings — the up-front validation is
-   what makes that safe.
+   Only run the per-terminal launcher snippet inside an `if [ "$CWD_OK" = "1" ]; then ... fi`
+   block. If `CWD_OK=0`, skip auto-launch entirely and show the manual
+   instructions. All of the snippets below embed `$CWD` and `${FILENAME}`
+   (which is timestamp+slug, character-set already constrained) into shell
+   strings — the up-front validation is what makes that safe.
 
    **tmux:**
    ```bash

@@ -269,7 +269,13 @@ only available when Phase 1 spawned analysts.
 2. Then copy it to $REPO_ROOT/ROADMAP.md (this is the only target-repo write
    you should make outside the optional quick-wins phase).
 3. If gh available and --no-issues not set: propose issues, get explicit
-   approval, then create with gh issue create.
+   approval, then create with gh issue create. Because your CWD is the
+   session dir (not the target repo), \`gh\` cannot infer the repo from
+   git context — you MUST pass an explicit --repo flag. Discover the
+   repo identifier first:
+       OWNER_REPO=\$(gh repo view "$REPO_ROOT" --json nameWithOwner --jq .nameWithOwner)
+   Then on every issue create:
+       gh issue create --repo "\$OWNER_REPO" --title ... --body ...
 
 ## Critical Reminders
 

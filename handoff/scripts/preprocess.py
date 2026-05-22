@@ -78,14 +78,26 @@ _REDACTORS: list[tuple[re.Pattern[str], str]] = [
     ),
     # PEM / OpenSSH private key blocks. These are multi-line; with re.DOTALL
     # the `.+?` happily spans newlines until the matching END marker.
+    # PGP private keys use the `KEY BLOCK` suffix, not bare `KEY`, so we
+    # enumerate two BEGIN/END shapes explicitly rather than trying a single
+    # pattern.
     (
         re.compile(
-            r"-----BEGIN (?:RSA |DSA |EC |OPENSSH |ENCRYPTED |PGP )?PRIVATE KEY-----"
+            r"-----BEGIN (?:RSA |DSA |EC |OPENSSH |ENCRYPTED )?PRIVATE KEY-----"
             r".+?"
-            r"-----END (?:RSA |DSA |EC |OPENSSH |ENCRYPTED |PGP )?PRIVATE KEY-----",
+            r"-----END (?:RSA |DSA |EC |OPENSSH |ENCRYPTED )?PRIVATE KEY-----",
             re.DOTALL,
         ),
         "[REDACTED_PRIVATE_KEY_BLOCK]",
+    ),
+    (
+        re.compile(
+            r"-----BEGIN PGP PRIVATE KEY BLOCK-----"
+            r".+?"
+            r"-----END PGP PRIVATE KEY BLOCK-----",
+            re.DOTALL,
+        ),
+        "[REDACTED_PGP_PRIVATE_KEY_BLOCK]",
     ),
     # API key prefixes (Anthropic/OpenAI/Stripe/Slack/GitHub/GitLab/Google/xAI)
     (
@@ -196,28 +208,78 @@ def _validate_input_path(path: Path, allow_external: bool) -> Path:
     return resolved
 
 
+def _walk_for_symlinks(leaf: Path, trusted_root: Path) -> None:
+    """Walk from leaf upward to trusted_root and refuse if any ancestor
+    component is a symlink. Defends against the case where the allowlist
+    membership check is performed against a path whose ancestors are
+    symlinks pointing outside the trusted root.
+
+    `trusted_root` itself is allowed to be a real directory (we stop the
+    walk at it). If it's missing, we stop at filesystem root.
+    """
+    try:
+        trusted_root_resolved = trusted_root.resolve()
+    except (OSError, RuntimeError):
+        return
+    cur = leaf
+    while True:
+        if cur.is_symlink():
+            die(f"refusing to follow symlink in output ancestry: {cur}")
+        try:
+            cur_resolved = cur.resolve() if cur.exists() else None
+        except (OSError, RuntimeError):
+            cur_resolved = None
+        if cur_resolved is not None and cur_resolved == trusted_root_resolved:
+            return
+        parent = cur.parent
+        if parent == cur:
+            return
+        cur = parent
+
+
 def _validate_output_path(path: Path, allow_external: bool) -> Path:
-    """Resolve and validate the output path."""
+    """Resolve and validate the output path.
+
+    Path-safety order:
+      1. Reject leaf symlink up front.
+      2. Allowlist check (membership in trusted root, by .resolve()).
+      3. Walk every ancestor between the leaf and the trusted root and
+         refuse if any of them is a symlink. This closes the gap where
+         a hostile `.claude/handoffs/` symlink under the repo would
+         resolve outside the repo yet still appear "inside" by
+         post-resolution comparison.
+      4. Create the parent only after all checks pass.
+    """
     resolved = path if path.is_absolute() else (Path.cwd() / path)
     resolved = resolved.expanduser()
 
     if resolved.is_symlink():
         die(f"refusing to follow symlink at output: {resolved}")
 
+    chosen_root: Path | None = None
     if not allow_external:
         # Allow ~/.claude/handoffs/* and any .claude/handoffs/ inside the
         # current git repo (the SKILL.md writes there per project).
-        ok = _is_within(resolved, DEFAULT_HANDOFF_HOME)
-        if not ok:
+        if _is_within(resolved, DEFAULT_HANDOFF_HOME):
+            chosen_root = DEFAULT_HANDOFF_HOME
+        else:
             git_root = _git_root_path()
             if git_root is not None:
-                ok = _is_within(resolved, git_root / ".claude" / "handoffs")
-        if not ok:
+                repo_handoffs = git_root / ".claude" / "handoffs"
+                if _is_within(resolved, repo_handoffs):
+                    chosen_root = repo_handoffs
+        if chosen_root is None:
             die(
                 f"refusing to write outside ~/.claude/handoffs/ or "
                 f"<repo>/.claude/handoffs/: {resolved}\n"
                 f"pass --unsafe-allow-external-output to override"
             )
+        # Walk ancestors and refuse if any is a symlink. The allowlist
+        # check above used .resolve(), so a symlinked ancestor that
+        # actually points outside the allowed root would have failed
+        # there; but a symlinked ancestor that points back INTO the
+        # allowed root (laundering) would have passed. This catches both.
+        _walk_for_symlinks(resolved, chosen_root)
 
     parent = resolved.parent
     if parent.exists() and parent.is_symlink():

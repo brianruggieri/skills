@@ -102,7 +102,7 @@ gh pr view --json number,url --jq '.number' 2>/dev/null
      page=$((page + 1))
    done
    if [ "$page" -gt "$max_pages" ]; then
-     echo "WARNING: hit ${max_pages}-page comment cap; PR has more comments than processed." >&2
+     echo "WARNING: hit ${max_pages}-page comment cap; PR may have additional comments not processed." >&2
      # Stop and surface to the user; do not proceed silently.
    fi
    ```
@@ -110,9 +110,24 @@ gh pr view --json number,url --jq '.number' 2>/dev/null
    later phases — never use `--paginate` on attacker-influenceable
    resources, always cap explicitly.
 
-3. **Fetch PR reviews** (overall review status):
+3. **Fetch PR reviews** (overall review status). Same bounded-loop pattern
+   as the comments fetch — never `--paginate` on attacker-influenceable
+   resources:
    ```bash
-   gh api repos/{owner}/{repo}/pulls/{number}/reviews --paginate --jq '.[] | {user: .user.login, state: .state, body: .body}'
+   page=1
+   max_pages=20
+   while [ "$page" -le "$max_pages" ]; do
+     out=$(gh api "repos/{owner}/{repo}/pulls/{number}/reviews?per_page=100&page=$page" \
+       --jq '.[] | {user: .user.login, state: .state, body: .body}')
+     [ -z "$out" ] && break
+     printf '%s\n' "$out"
+     count=$(printf '%s\n' "$out" | wc -l | tr -d ' ')
+     [ "$count" -lt 100 ] && break
+     page=$((page + 1))
+   done
+   if [ "$page" -gt "$max_pages" ]; then
+     echo "WARNING: hit ${max_pages}-page reviews cap; may have additional reviews." >&2
+   fi
    ```
 
 4. **Check CI status:**
@@ -180,24 +195,46 @@ line to understand the full context before deciding how to fix it.
   component with `lstat` (or, in shell, `find <component> -maxdepth 0
   -type l` — `-type l` catches symlinks regardless of target).
 
-A practical implementation:
+A practical implementation. Wrap in a function so `return 1` actually
+stops the caller (a bare `return` outside a function is an error, not a
+shell-script abort — the surrounding code keeps running):
+
 ```bash
-# Reject before resolving
-case "$path" in
-  /*|*..*|~*) return 1 ;;
-esac
-# Lstat each component as we walk in
-cur=""
-IFS=/ read -r -a parts <<< "$path"
-for p in "${parts[@]}"; do
-  [ -z "$p" ] && continue
-  cur="${cur:+$cur/}$p"
-  abs="$REPO_ROOT/$cur"
-  if [ -L "$abs" ]; then
-    echo "comment references symlinked component: $abs" >&2
-    return 1
-  fi
-done
+validate_comment_path() {
+  local path="$1"
+
+  # Reject control characters (including newlines, which would let later
+  # components escape per-line splitting) before any other check.
+  case "$path" in
+    *[$'\n\r\t\0\b']* ) echo "control chars in path: $path" >&2; return 1 ;;
+  esac
+
+  # Reject absolutes, traversals, home expansions
+  case "$path" in
+    /*|*..*|~*) echo "unsafe path shape: $path" >&2; return 1 ;;
+  esac
+
+  # Lstat each component as we walk in. `find -type l` catches symlinks
+  # regardless of target.
+  local cur=""
+  local IFS=/
+  for p in $path; do
+    [ -z "$p" ] && continue
+    cur="${cur:+$cur/}$p"
+    local abs="$REPO_ROOT/$cur"
+    if [ -L "$abs" ]; then
+      echo "comment references symlinked component: $abs" >&2
+      return 1
+    fi
+  done
+  return 0
+}
+
+# Use it:
+if ! validate_comment_path "$comment_path"; then
+  # log as finding, skip this comment
+  continue
+fi
 ```
 
 If validation fails, skip the comment and log it as a finding ("comment
@@ -262,6 +299,10 @@ After all fixes:
 Check the PR description for any unchecked manual test items (lines matching `- [ ]`). For each:
 
 1. **If the test can run non-interactively** — run it and verify the output.
+   Apply the same trust gate from Phase 3 step 4 first: if the PR is
+   `isCrossRepository`, from a different owner, or from an unfamiliar
+   author (or any of those signals is missing), confirm with the user
+   before invoking the test command.
 2. **If the test requires interactive input** — prompt the user to run it in their terminal. Provide the exact command. Wait for confirmation or output before marking it complete.
 3. **Update the PR description** to check off completed items (`- [x]`).
 
@@ -313,7 +354,10 @@ If there are no manual test items, skip this phase.
       git commit --no-edit
       ```
 
-   d. **Re-run the full test suite** to verify nothing broke in the merge resolution.
+   d. **Re-run the full test suite** to verify nothing broke in the merge
+      resolution. The Phase 3 trust gate still applies here: if the PR is
+      from a fork / cross-repo / unfamiliar author, get explicit user
+      consent before invoking the test command, even on a re-run.
 
    e. **If a conflict is too complex** (e.g., large structural changes on both sides), ask the user before resolving. Show the conflicted files and both sides of the diff.
 
@@ -342,7 +386,9 @@ After all fixes are pushed, reply to each comment and resolve threads on GitHub:
 
    Keep replies concise — one sentence per reply.
 
-2. **Fetch unresolved thread IDs** (paginate to catch all threads):
+2. **Fetch unresolved thread IDs.** Cap pagination at 20 pages (each page
+   holds 100 threads; that's 2000 threads, plenty). If we hit the cap,
+   warn — never loop indefinitely against an attacker-controlled resource.
    ```bash
    # First page
    gh api graphql -f query='
@@ -383,8 +429,21 @@ After all fixes are pushed, reply to each comment and resolve threads on GitHub:
      }
    }' --jq '.data.repository.pullRequest.reviewThreads'
    ```
-   Repeat until `hasNextPage` is false. Collect all unresolved thread IDs:
+   Repeat until `hasNextPage` is false OR you've fetched 20 pages,
+   whichever comes first. Track a counter explicitly:
    ```bash
+   page_count=0
+   max_pages=20
+   end_cursor=""
+   while [ "$page_count" -lt "$max_pages" ]; do
+     # ... run the query with `after: "$end_cursor"` after the first page ...
+     # Parse pageInfo.hasNextPage and pageInfo.endCursor from output.
+     page_count=$((page_count + 1))
+     [ "$has_next_page" = "false" ] && break
+   done
+   if [ "$page_count" -ge "$max_pages" ] && [ "$has_next_page" = "true" ]; then
+     echo "WARNING: hit ${max_pages}-page review-thread cap; may have additional unresolved threads." >&2
+   fi
    # From each page's output, filter unresolved threads:
    # .nodes[] | select(.isResolved == false) | .id
    ```

@@ -213,12 +213,22 @@ validate_comment_path() {
     return 1
   fi
 
-  # Reject ANY ASCII control character (\x00..\x1F plus DEL). LC_ALL=C
-  # forces byte-class semantics so [[:cntrl:]] doesn't surprise us on
-  # locales that interpret it differently. The escape character (ESC,
-  # 0x1B) was the prior gap.
-  if LC_ALL=C [[ "$path" =~ [[:cntrl:]] ]]; then
-    echo "control chars in path: $path" >&2
+  # Reject ANY ASCII control character (\x00..\x1F plus DEL). We use
+  # `tr -cd '[:cntrl:]'` to keep ONLY control bytes and then count them
+  # with `wc -c`. Two earlier attempts were wrong:
+  #   - `LC_ALL=C [[ "$path" =~ [[:cntrl:]] ]]` doesn't work because
+  #     `[[` is a Bash keyword, not a command, so the LC_ALL prefix has
+  #     no effect; worse, Bash's regex `[[:cntrl:]]` does not reliably
+  #     match newline in default locales.
+  #   - `printf '%s' "$path" | grep -q '[[:cntrl:]]'` misses embedded
+  #     newlines because grep treats them as line separators, not
+  #     content.
+  # The tr+wc pattern is byte-oriented and catches every control byte
+  # including \n, \t, \r, \0, \033 (ESC), and \177 (DEL).
+  local _ctrl_count
+  _ctrl_count=$(printf '%s' "$path" | LC_ALL=C tr -cd '[:cntrl:]' | wc -c | tr -d ' ')
+  if [ "$_ctrl_count" != "0" ]; then
+    echo "control chars in path: $(printf '%q' "$path")" >&2
     return 1
   fi
 

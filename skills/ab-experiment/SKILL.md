@@ -1,6 +1,6 @@
 ---
 name: ab-experiment
-description: "Use when the user says 'run this side by side', 'A/B this', or wants to measure whether a prompting/context/workflow change (handoff doc, CLAUDE.md variant, new skill, plan style) actually helps. Runs two identical-plan sessions differing by one treatment, mines both session JSONLs, blind-grades outputs, commits an evidence doc. NOT for implementing A/B tests or feature flags in product code."
+description: "Use when the user says 'run this side by side', 'A/B this', or wants to MEASURE whether a prompting/context/workflow change (handoff doc, CLAUDE.md variant, new skill, plan style) actually helps. Runs two identical-plan sessions differing by one treatment, mines both session JSONLs, blind-grades outputs, commits an evidence doc. NOT for building product A/B tests, feature flags, percentage rollouts, or marketing split tests — those are ordinary implementation work."
 ---
 
 # /ab-experiment

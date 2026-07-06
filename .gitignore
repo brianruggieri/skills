@@ -1,3 +1,14 @@
+.DS_Store
+__pycache__/
+.pytest_cache/
+*.pyc
+node_modules/
+.cache/
 .claude/handoffs/
-handoff/tests/output/
+.claude/worktrees/
+.claude/settings.local.json
 .worktrees/
+handoff/tests/output/
+files.zip
+*.tar.gz
+last-fetch.json

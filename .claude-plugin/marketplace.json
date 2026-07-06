@@ -1,0 +1,11 @@
+{
+	"name": "skills",
+	"owner": { "name": "Brian Ruggieri", "url": "https://github.com/brianruggieri" },
+	"plugins": [
+		{
+			"name": "skills",
+			"source": "./",
+			"description": "Workflow skills for Claude Code: handoffs, A/B experiments, honest assessments, parallel dispatch, PR review loops, and eval harnesses."
+		}
+	]
+}

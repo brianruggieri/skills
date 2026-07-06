@@ -8,8 +8,8 @@ description: "Use when the user says 'run this side by side', 'A/B this', or wan
 Measure whether ONE change (treatment) helps, with real numbers and blind grades. Precedent: three handoff A/B tests in `~/git/skills/handoff/evidence/`, including a decisive negative result — negative results are a success, report them proudly.
 
 Existing tooling — reuse, do not rewrite:
-- Metrics miner: `~/git/skills/handoff/eval/compare_implementations.py`
-- Grading rubric: `~/git/skills/handoff/eval/prompts/grade-implementation.md`
+- Metrics miner: `~/.claude/skills/handoff/eval/compare_implementations.py`
+- Grading rubric: `~/.claude/skills/handoff/eval/prompts/grade-implementation.md`
 - Evidence format: `~/git/skills/handoff/evidence/2026-03-24-candidate-eval-implementation-ab-test.md`
 
 ## 1. Setup
@@ -39,7 +39,7 @@ Existing tooling — reuse, do not rewrite:
   ```
 - [ ] Run the miner:
   ```bash
-  python3 ~/git/skills/handoff/eval/compare_implementations.py \
+  python3 ~/.claude/skills/handoff/eval/compare_implementations.py \
     --state-file <abs path>/eval-state.json --repo-root <abs repo root>
   ```
 - [ ] Effective tokens = input + output + cache_read + cache_creation. Never compare on input+output alone — cache traffic is where the cost lives.
@@ -48,7 +48,7 @@ Existing tooling — reuse, do not rewrite:
 ## 4. Grade
 
 - [ ] Grade with SUBAGENTS in this session (subscription). Never API, never promptfoo — rejected twice; `claude -p` also burns subscription anyway (June 2026 billing change paused).
-- [ ] Grade per /honest-assessment step 3 (rubric-first, named deductions, blind diff). Rubric lives at `~/git/skills/handoff/eval/prompts/grade-implementation.md`; strip arm names, branch names, commit messages, and any PR-style claims before handing a diff to a grader.
+- [ ] Grade per /honest-assessment step 3 (rubric-first, named deductions, blind diff). Rubric lives at `~/.claude/skills/handoff/eval/prompts/grade-implementation.md`; strip arm names, branch names, commit messages, and any PR-style claims before handing a diff to a grader.
 - [ ] Use 2 graders per arm; if they disagree by >1 point on total, run a third and take the median.
 - [ ] Only after all scores are in, unblind and map scores to arms.
 

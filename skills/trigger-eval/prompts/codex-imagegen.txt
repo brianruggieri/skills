@@ -1,0 +1,6 @@
++ generate a pixel-art game asset for a spaceship sprite
++ create a hero image for my blog post about coffee
++ edit this texture to make it look weathered and rusty
+- what's in this screenshot I just pasted?
+- draw me an architecture diagram of the service topology
+- describe the objects in this photo

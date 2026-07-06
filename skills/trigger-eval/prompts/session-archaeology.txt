@@ -1,0 +1,6 @@
++ check your claude logs for what we decided about worktrees
++ what have I done with WebGL across my projects?
++ we've talked about this before, dig it up
+- tail the app logs and find the error
+- what does this git history show?
+- read the log file in /var/log

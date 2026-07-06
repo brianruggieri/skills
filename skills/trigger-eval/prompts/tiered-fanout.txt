@@ -1,0 +1,4 @@
++ dispatch agents to close out these 12 issues in parallel
++ fan out subagents over these three implementation plans
+- run these two shell commands in parallel
+- what's a good way to organize this epic?

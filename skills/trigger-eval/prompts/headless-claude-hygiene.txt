@@ -1,0 +1,6 @@
++ I'm about to run a batch script that calls claude -p in a loop, check it first
++ my session usage is running hot today and I don't know why
++ the projects folder is full of junk sessions from my test suite
+- run this one claude prompt for me
+- clean up the node_modules folders eating my disk
+- why is my shell script slow?

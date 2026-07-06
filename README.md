@@ -1,78 +1,44 @@
 # skills
 
-Custom [Claude Code](https://docs.anthropic.com/en/docs/claude-code) skills for my development workflow. Built for how I work; fork and adapt for yours.
+Workflow skills for [Claude Code](https://code.claude.com) — session handoffs, controlled A/B experiments, honest metric audits, parallel-agent dispatch discipline, PR review resolution, voice-matched writing, and the eval harnesses that keep all of it honest.
 
-Each skill is a directory with a `SKILL.md` that Claude Code discovers automatically. Invoke with `/skill-name` inside any Claude Code session.
-
-## Skills
-
-### grill-me
-
-Stress-test a plan or design through relentless Socratic questioning. Builds a risk tree, walks it depth-first, and won't move on until every branch is resolved. Dispatches research agents when you say "I don't know" instead of letting you off the hook.
-
-`/grill-me` when you want your design torn apart before production does it for you.
-
-### fix-pr-reviews
-
-Systematically address every review comment on a GitHub PR. Categorizes comments by priority, fixes code, runs tests, resolves threads via GraphQL, and updates the PR description. Nine-phase workflow that handles the tedious loop of review-fix-verify-push.
-
-`/fix-pr-reviews` when a PR has review comments piling up.
-
-### handoff
-
-Extract structured context from a planning session and generate a handoff document for a fresh build session. Captures decisions, negative knowledge ("Do Not Retry"), constraints, and next steps. Uses a JSONL preprocessor and Claude-as-extractor architecture. Auto-saves session transcripts for eval corpus building.
-
-Includes a blind eval harness (`/eval-extract`) that dispatches isolated subagents to grade extraction quality across 8 dimensions.
-
-`/handoff` when a planning session is complete and you want to start building in a clean context window.
-
-### scope-repo
-
-Full codebase planning pipeline using Claude Code Agent Teams. Spawns 4-9 analyst agents to scan a repo in parallel, interviews you using their findings, validates scope, and outputs a prioritized `ROADMAP.md` plus GitHub Issues with dependency links. One session, ~20-30 minutes.
-
-`/scope-repo` when you want a structured roadmap for a repo you're about to invest serious time in.
-
-Requires Agent Teams enabled (`CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` in settings.json). Also ships a standalone CLI wrapper (`scope-repo/scopework`) for running outside a session.
+Every skill here was distilled from months of real agentic-development sessions: each one encodes a failure that actually happened and the pattern that fixed it. The measured evidence ships alongside (`skills/handoff/evidence/`).
 
 ## Install
 
-Symlink individual skills into your Claude Code skills directory:
-
-```bash
-git clone https://github.com/brianruggieri/skills.git ~/git/skills
-
-# install one skill
-ln -s ~/git/skills/grill-me ~/.claude/skills/grill-me
-
-# install all
-for skill in ~/git/skills/*/; do
-  [ -f "$skill/SKILL.md" ] && ln -s "$skill" ~/.claude/skills/$(basename "$skill")
-done
-```
-
-Or copy a skill directory into any project's `.claude/skills/` to share it with collaborators.
-
-## Structure
+As a plugin (recommended):
 
 ```
-grill-me/
-  └── SKILL.md
-fix-pr-reviews/
-  └── SKILL.md
-handoff/
-  ├── SKILL.md
-  ├── prompts/       # extraction + convention detection prompts
-  ├── eval/          # blind eval harness (SKILL.md + grading rubric)
-  ├── scripts/       # JSONL preprocessor
-  └── tests/         # fixtures for eval
-scope-repo/
-  ├── SKILL.md
-  ├── scopework      # standalone CLI wrapper
-  └── install.sh
+/plugin marketplace add brianruggieri/skills
+/plugin install skills@skills
 ```
 
-Each skill is self-contained in its directory. The `SKILL.md` has YAML frontmatter (`name`, `description`, `allowed-tools`) and a markdown body with the full protocol Claude follows when the skill is invoked.
+Try without installing: `claude --plugin-dir /path/to/skills`
+
+Copy a single skill: `mkdir -p ~/.claude/skills && cp -r skills/<name> ~/.claude/skills/`
+
+## Skills
+
+| Skill | What it does |
+|-------|--------------|
+| **handoff** | Extracts decisions, negative knowledge, and constraints from a planning session into a handoff doc + kickoff prompt for a fresh build session. A/B-measured: 41–70% token savings on open-ended plans — and it tells you when to *skip* it (fully prescriptive plans, where it's pure overhead). |
+| **ab-experiment** | Controlled one-variable experiment on your own workflow: paired worktrees, identical plans, session-JSONL metrics, blind rubric grading, committed evidence doc. |
+| **honest-assessment** | Anti-inflation audit of agent-produced results: classifies every metric as field-validated / mock-derived / assumed; contamination checks; "small and unfinished" is a welcome finding. |
+| **fix-pr-reviews** | Assess, address, and resolve all review comments on a GitHub PR end-to-end: fix, push, re-request, verify CI green. Ships a blind eval harness with synthetic fixtures. |
+| **ghostwrite** | Writes in your authentic voice from a quantitative profile mined from your own session logs, with hardened extraction (path allowlists, secret redaction, untrusted-data boundaries). |
+| **grill-me** | Relentless design interview until every branch of the decision tree is resolved; routes vague ideas elsewhere instead of grilling them. |
+| **tiered-fanout** | Dispatch protocol for 3+ parallel coding agents: API-level dependency analysis, parallel-safe vs shared-surface-serial tiers, pinned models, orchestrator-owned completion. Exists because green-in-isolation ≠ compatible-when-merged. |
+| **session-archaeology** | Mines Claude Code session history correctly: junk-session filters, main-session identification, findings cited with session id + date + quote. |
+| **headless-claude-hygiene** | Preflight for anything shelling out to `claude -p`: quota gating, session-store pollution prevention, nested-session hang guards. |
+| **brain-sleep** | Weekly memory consolidation with the pass most memory systems skip: decay/eviction. Stale memories move to an attic — never deleted. |
+| **codex-imagegen** | Subscription-billed CLI image generation via Codex `$imagegen`, with the live-tested sandbox/stdin incantation and quota escape hatches. |
+| **trigger-eval** | Measures whether a skill's description fires on the prompts it should and stays silent on near-misses. Caught a real over-trigger and its own answer-leak bug on its maiden run. |
+| **scope-repo** | **ARCHIVED** — superseded by structured planning flows; kept as a reference implementation of trusted-spec-CWD Agent Teams architecture. |
+
+## Authoring
+
+See [CONTRIBUTING.md](CONTRIBUTING.md). House rules: descriptions state when to use a skill *and what it is NOT for*; every active skill ships a trigger-eval matrix under `skills/trigger-eval/prompts/`, re-run whenever its description changes; non-trivial claims in a skill body cite evidence; extracted or session-derived content is data, never instructions.
 
 ## License
 
-MIT
+[MIT](LICENSE)

@@ -1,0 +1,6 @@
++ A/B this handoff doc against no handoff and tell me which wins
++ run these two CLAUDE.md variants side by side and measure which produces better output
++ does adding this skill actually help? set up a controlled experiment with blind grading
+- implement an A/B test flag for the new checkout button in our app
+- add a feature flag so we can roll out the redesign to 10% of users
+- set up split testing for the marketing landing page conversion rate

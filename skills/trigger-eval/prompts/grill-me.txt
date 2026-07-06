@@ -1,0 +1,6 @@
++ grill me on this architecture proposal
++ stress-test my design decisions before I commit to them
++ interrogate every branch of my plan until nothing's unresolved
+- run a load and stress test against the staging API
+- help me prep answers for my job interview tomorrow
+- what temperature should I grill these steaks at?

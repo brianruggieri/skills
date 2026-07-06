@@ -1,0 +1,6 @@
++ run brain sleep
++ consolidate my memories from this week
++ my memory files feel stale, clean them up
+- what did I work on last week?
+- summarize this session
+- clean up the dead code in this repo

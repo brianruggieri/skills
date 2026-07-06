@@ -1,0 +1,4 @@
++ have we made progress or added bullshit to a pile?
++ is this benchmark result honestly better, verify the metrics
+- review this PR for bugs
+- how are you feeling about the project?

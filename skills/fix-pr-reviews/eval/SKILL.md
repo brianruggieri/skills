@@ -6,7 +6,10 @@ allowed-tools: Read Write Bash Glob Agent
 
 # Eval: PR Comment Triage
 
-Run blind evaluation of `fix-pr-reviews/prompts/triage.md` against test fixtures.
+Run blind evaluation of `skills/fix-pr-reviews/prompts/triage.md` against test fixtures.
+
+All repo-relative paths below assume the repo root as CWD (the skill lives at
+`skills/fix-pr-reviews/`).
 
 ## Process
 
@@ -14,13 +17,13 @@ Run blind evaluation of `fix-pr-reviews/prompts/triage.md` against test fixtures
 
 Find fixtures from:
 
-1. **Curated fixtures** (committed): `fix-pr-reviews/tests/fixtures/*.md`
+1. **Curated fixtures** (committed): `skills/fix-pr-reviews/tests/fixtures/*.md`
 
 ```bash
 bash -O nullglob -c '
-  files=(fix-pr-reviews/tests/fixtures/*.md)
+  files=(skills/fix-pr-reviews/tests/fixtures/*.md)
   if ((${#files[@]} == 0)); then
-    echo "No fixtures found in fix-pr-reviews/tests/fixtures"
+    echo "No fixtures found in skills/fix-pr-reviews/tests/fixtures"
     exit 1
   fi
   printf "%s\n" "${files[@]}"
@@ -33,8 +36,8 @@ If no fixtures found, tell the user and stop.
 
 Resolve absolute paths for agent prompts:
 ```bash
-TRIAGE_PROMPT="$(pwd)/fix-pr-reviews/prompts/triage.md"
-GRADE_PROMPT="$(pwd)/fix-pr-reviews/eval/prompts/grade.md"
+TRIAGE_PROMPT="$(pwd)/skills/fix-pr-reviews/prompts/triage.md"
+GRADE_PROMPT="$(pwd)/skills/fix-pr-reviews/eval/prompts/grade.md"
 ```
 
 ### Phase 3: Triage (Blind Agents — All Concurrent)
@@ -82,10 +85,10 @@ Collect each grader's output. These are the scorecards.
 
 ### Phase 5: Save Results
 
-For each fixture, write the results to `fix-pr-reviews/tests/output/eval/`:
+For each fixture, write the results to `skills/fix-pr-reviews/tests/output/eval/`:
 
 ```bash
-mkdir -p fix-pr-reviews/tests/output/eval
+mkdir -p skills/fix-pr-reviews/tests/output/eval
 ```
 
 Write two files per fixture:
@@ -97,7 +100,7 @@ Write two files per fixture:
 Parse each scorecard and display a summary table.
 
 ```
-Eval Results — fix-pr-reviews/prompts/triage.md
+Eval Results — skills/fix-pr-reviews/prompts/triage.md
 ═══════════════════════════════════════════════════
 Fixture: {name}
   {dimension}: {score}/10  (for each dimension from the scorecard)

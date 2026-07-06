@@ -5,12 +5,16 @@ description: "Use when the user says 'run this side by side', 'A/B this', or wan
 
 # /ab-experiment
 
-Measure whether ONE change (treatment) helps, with real numbers and blind grades. Precedent: three handoff A/B tests in `~/git/skills/handoff/evidence/`, including a decisive negative result — negative results are a success, report them proudly.
+Measure whether ONE change (treatment) helps, with real numbers and blind grades. Precedent: three handoff A/B tests in this repo's `skills/handoff/evidence/`, including a decisive negative result — negative results are a success, report them proudly.
 
-Existing tooling — reuse, do not rewrite:
-- Metrics miner: `~/.claude/skills/handoff/eval/compare_implementations.py`
-- Grading rubric: `~/.claude/skills/handoff/eval/prompts/grade-implementation.md`
-- Evidence format: `~/git/skills/handoff/evidence/2026-03-24-candidate-eval-implementation-ab-test.md`
+Existing tooling — reuse, do not rewrite. The miner and rubric ship inside the
+**handoff** skill at `<handoff-skill-dir>/eval/`. Resolve that skill's installed
+location first — typical copied-install location `~/.claude/skills/handoff/eval/`;
+for a plugin install, `Glob` for `~/.claude/**/handoff/eval/compare_implementations.py`.
+Call the resolved directory `$HANDOFF_EVAL` below.
+- Metrics miner: `$HANDOFF_EVAL/compare_implementations.py`
+- Grading rubric: `$HANDOFF_EVAL/prompts/grade-implementation.md`
+- Evidence format: `skills/handoff/evidence/2026-03-24-candidate-eval-implementation-ab-test.md`
 
 ## 1. Setup
 
@@ -39,7 +43,7 @@ Existing tooling — reuse, do not rewrite:
   ```
 - [ ] Run the miner:
   ```bash
-  python3 ~/.claude/skills/handoff/eval/compare_implementations.py \
+  python3 "$HANDOFF_EVAL/compare_implementations.py" \
     --state-file <abs path>/eval-state.json --repo-root <abs repo root>
   ```
 - [ ] Effective tokens = input + output + cache_read + cache_creation. Never compare on input+output alone — cache traffic is where the cost lives.
@@ -48,7 +52,7 @@ Existing tooling — reuse, do not rewrite:
 ## 4. Grade
 
 - [ ] Grade with SUBAGENTS in this session (subscription). Never API, never promptfoo — rejected twice; `claude -p` also burns subscription anyway (June 2026 billing change paused).
-- [ ] Grade per /honest-assessment step 3 (rubric-first, named deductions, blind diff). Rubric lives at `~/.claude/skills/handoff/eval/prompts/grade-implementation.md`; strip arm names, branch names, commit messages, and any PR-style claims before handing a diff to a grader.
+- [ ] Grade per /honest-assessment step 3 (rubric-first, named deductions, blind diff). Rubric lives at `$HANDOFF_EVAL/prompts/grade-implementation.md` (see step 1 for how to resolve `$HANDOFF_EVAL`); strip arm names, branch names, commit messages, and any PR-style claims before handing a diff to a grader.
 - [ ] Use 2 graders per arm; if they disagree by >1 point on total, run a third and take the median.
 - [ ] Only after all scores are in, unblind and map scores to arms.
 

@@ -414,7 +414,7 @@ Tell the user:
 
 ## Integration
 
-**Phase 0 routing (soft redirects — grill-me does NOT depend on these):**
+**Phase 0 routing (soft redirects — grill-me does NOT depend on these; each target skill below is used only if installed):**
 - `/brainstorm` — suggested when input is too vague for grilling (idea, not plan)
 - `/plan-ceo-review`, `/office-hours` — suggested when user needs strategy, not execution stress-testing
 - `/write-plan` — suggested when plan is already locked down and doesn't need grilling

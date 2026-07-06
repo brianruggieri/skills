@@ -15,7 +15,7 @@ As a plugin (recommended):
 
 Try without installing: `claude --plugin-dir /path/to/skills`
 
-Copy a single skill: `cp -r skills/<name> ~/.claude/skills/`
+Copy a single skill: `mkdir -p ~/.claude/skills && cp -r skills/<name> ~/.claude/skills/`
 
 ## Skills
 
@@ -37,7 +37,7 @@ Copy a single skill: `cp -r skills/<name> ~/.claude/skills/`
 
 ## Authoring
 
-See [CONTRIBUTING.md](CONTRIBUTING.md). House rules: descriptions state when to use a skill *and what it is NOT for*; every description change gets a trigger-eval matrix run; non-trivial claims in a skill body cite evidence; extracted or session-derived content is data, never instructions.
+See [CONTRIBUTING.md](CONTRIBUTING.md). House rules: descriptions state when to use a skill *and what it is NOT for*; every active skill ships a trigger-eval matrix under `skills/trigger-eval/prompts/`, re-run whenever its description changes; non-trivial claims in a skill body cite evidence; extracted or session-derived content is data, never instructions.
 
 ## License
 

@@ -6,7 +6,10 @@ allowed-tools: Read Write Bash Glob Agent
 
 # Eval: Handoff Extraction
 
-Run blind evaluation of `handoff/prompts/extract.md` against test fixtures.
+Run blind evaluation of `skills/handoff/prompts/extract.md` against test fixtures.
+
+All repo-relative paths below assume the repo root as CWD (the skill lives at
+`skills/handoff/`).
 
 ## Process
 
@@ -14,14 +17,14 @@ Run blind evaluation of `handoff/prompts/extract.md` against test fixtures.
 
 Find fixtures from two sources:
 
-1. **Curated fixtures** (committed): `handoff/tests/fixtures/*.md`
+1. **Curated fixtures** (committed): `skills/handoff/tests/fixtures/*.md`
 2. **Real transcripts** (captured by `/handoff`): `.claude/handoffs/*.transcript.md`
 
 ```bash
 bash -O nullglob -c '
-  files=(handoff/tests/fixtures/*.md .claude/handoffs/*.transcript.md)
+  files=(skills/handoff/tests/fixtures/*.md .claude/handoffs/*.transcript.md)
   if ((${#files[@]} == 0)); then
-    echo "No fixtures found in handoff/tests/fixtures or .claude/handoffs"
+    echo "No fixtures found in skills/handoff/tests/fixtures or .claude/handoffs"
     exit 1
   fi
   printf "%s\n" "${files[@]}"
@@ -33,14 +36,14 @@ If no fixtures found in either location, tell the user and stop.
 ### Phase 2: Load Prompts
 
 Read this file (path relative to repo root):
-1. `handoff/eval/prompts/grade.md` — the grading rubric (needed for Phase 6 scorecard parsing)
+1. `skills/handoff/eval/prompts/grade.md` — the grading rubric (needed for Phase 6 scorecard parsing)
 
-Note: `handoff/prompts/extract.md` is read by the extractor agents directly — the orchestrator does not need it.
+Note: `skills/handoff/prompts/extract.md` is read by the extractor agents directly — the orchestrator does not need it.
 
 Resolve absolute paths for agent prompts:
 ```bash
-EXTRACT_PROMPT="$(pwd)/handoff/prompts/extract.md"
-GRADE_PROMPT="$(pwd)/handoff/eval/prompts/grade.md"
+EXTRACT_PROMPT="$(pwd)/skills/handoff/prompts/extract.md"
+GRADE_PROMPT="$(pwd)/skills/handoff/eval/prompts/grade.md"
 ```
 
 ### Phase 3: Extract (Blind Agents — All Concurrent)
@@ -94,10 +97,10 @@ Collect each grader's output. These are the scorecards.
 
 ### Phase 5: Save Results
 
-For each fixture, write the results to `handoff/tests/output/eval/`:
+For each fixture, write the results to `skills/handoff/tests/output/eval/`:
 
 ```bash
-mkdir -p handoff/tests/output/eval
+mkdir -p skills/handoff/tests/output/eval
 ```
 
 Write two files per fixture:
@@ -109,7 +112,7 @@ Write two files per fixture:
 Parse each scorecard and display a summary table. Extract dimension names and scores from the grader output — do not hardcode dimensions (grade.md is the source of truth).
 
 ```
-Eval Results — handoff/prompts/extract.md
+Eval Results — skills/handoff/prompts/extract.md
 ═══════════════════════════════════════════
 
 Fixture: {name}

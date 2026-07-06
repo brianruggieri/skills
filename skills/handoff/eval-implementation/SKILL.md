@@ -92,11 +92,15 @@ Strip `feat/` prefix from `--source-branch`. E.g., `feat/eligibility-hard-caps` 
 
 1. Read `.claude/handoffs/eval-state.json`.
 
-2. Locate `compare_implementations.py`:
+2. Locate `compare_implementations.py`. It ships inside the **handoff** skill
+   alongside this one — `eval-implementation/` and `eval/` are siblings under
+   the handoff skill dir. Resolve the handoff skill dir as the parent of the
+   directory holding the `SKILL.md` you loaded (`$HANDOFF_DIR`; typical
+   copied-install location `~/.claude/skills/handoff/`, or `Glob` for
+   `~/.claude/**/handoff/eval/compare_implementations.py` for a plugin install):
    ```bash
    STATE_FILE=".claude/handoffs/eval-state.json"
-   REPO_ROOT="$(cd "$(dirname "$STATE_FILE")/../.." && pwd)"
-   COMPARE="$REPO_ROOT/handoff/eval/compare_implementations.py"
+   COMPARE="$HANDOFF_DIR/eval/compare_implementations.py"
    ```
    Run it and capture stdout:
    ```bash
@@ -105,7 +109,7 @@ Strip `feat/` prefix from `--source-branch`. E.g., `feat/eligibility-hard-caps` 
 
 3. Split stdout on `---DIFF---` sentinel: everything before = metrics table; everything after = full diff.
 
-4. Read `grade-implementation.md` from `~/.claude/skills/handoff/eval/prompts/grade-implementation.md`. Inject its full content inline into each grader agent's prompt.
+4. Read `grade-implementation.md` from `$HANDOFF_DIR/eval/prompts/grade-implementation.md` (same `$HANDOFF_DIR` resolved in step 2). Inject its full content inline into each grader agent's prompt.
 
 5. Dispatch two grader agents **concurrently** — one per branch. Each agent prompt contains:
 
@@ -133,7 +137,7 @@ Strip `feat/` prefix from `--source-branch`. E.g., `feat/eligibility-hard-caps` 
 
 6. Collect scorecards from both graders.
 
-7. Save to `~/.claude/skills/handoff/tests/output/eval/`:
+7. Save to `$HANDOFF_DIR/tests/output/eval/`:
    - `<experiment>-compare.md` — metrics table
    - `<experiment>-with-handoff-scorecard.md`
    - `<experiment>-no-handoff-scorecard.md`

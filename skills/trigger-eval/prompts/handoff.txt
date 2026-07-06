@@ -1,0 +1,6 @@
++ we've finished planning, write me a handoff doc so I can start building in a fresh session
++ capture the decisions and constraints from this planning session for a clean build session
++ generate a handoff document to carry this context into a new build session
+- hand off this ticket to the backend team
+- write a handoff-of-duties email for when I go on vacation
+- how do I hand off my SSH keys to the new laptop?

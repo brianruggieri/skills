@@ -1,0 +1,6 @@
++ my skill never fires even on obvious prompts, test its description
++ I just edited this skill's frontmatter description, check it triggers correctly
++ this skill keeps firing on the wrong prompts, run the trigger matrix
+- is this skill's output actually any good? grade the results
+- run an A/B experiment to see if the handoff skill saves tokens
+- how do I add allowed-tools to my skill's frontmatter?

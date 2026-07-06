@@ -9,11 +9,15 @@ allowed-tools: Read Write Edit Bash
 Measure whether a skill's frontmatter description fires on the prompts it
 should and stays silent on the ones it shouldn't.
 
-1. Write (or update) the prompt matrix at `prompts/<skill>.txt` — `+ ` lines
-   MUST load the skill, `- ` lines must NOT. Negatives are the valuable half:
-   write near-misses, not obviously-unrelated asks.
-2. Run `./run.sh <skill> [--model MODEL] [--cwd DIR]`. Exit 0 = perfect
-   matrix; nonzero = at least one MISS.
+First resolve this skill's own directory — the harness told you the path to
+the `SKILL.md` you just loaded, so `SKILL_DIR` is its parent. Everything below
+is relative to that directory (the CWD is not assumed to be the skill dir).
+
+1. Write (or update) the prompt matrix at `<SKILL_DIR>/prompts/<skill>.txt` —
+   `+ ` lines MUST load the skill, `- ` lines must NOT. Negatives are the
+   valuable half: write near-misses, not obviously-unrelated asks.
+2. Run `cd <SKILL_DIR> && ./run.sh <skill> [--model MODEL] [--cwd DIR]`. Exit 0
+   = perfect matrix; nonzero = at least one MISS.
 3. If any prompt MISSes, edit the target skill's `description:` and re-run
    until the matrix is clean.
 

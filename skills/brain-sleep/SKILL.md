@@ -26,17 +26,21 @@ If no new sessions: log "nothing to consolidate", still run Phase 3 (decay), ski
 
 ## Phase 3 — Decay / eviction pass (the part that matters)
 
-For every file in `~/.claude/projects/-Users-brianruggieri/memory/`:
+Resolve your global memory dir at runtime (don't hardcode the owner slug):
+```bash
+MEMDIR="$(ls -d ~/.claude/projects/-Users-*/memory | head -1)"
+```
+For every file in `$MEMDIR` (i.e. `~/.claude/projects/-Users-*/memory/`):
 1. **Verify referenced reality**: files, scripts, flags, tools it names still exist (Bash checks, not assumptions). A memory that references deleted infrastructure is stale.
 2. **Age check**: `project`-type memories describing "current state" older than ~60 days with no matching recent sessions → stale candidate.
 3. **Contradiction check**: conflicts with a newer memory → recency wins; fold any still-true residue into the newer one, attic the older.
-4. Disposition: stale → MOVE to `~/.claude/projects/-Users-brianruggieri/memory/attic/` (never delete) and remove its MEMORY.md index line. Uncertain → append a line `> ⚠ stale-review YYYY-MM-DD: <reason>` to the file body and keep it.
+4. Disposition: stale → MOVE to `$MEMDIR/attic/` (never delete) and remove its MEMORY.md index line. Uncertain → append a line `> ⚠ stale-review YYYY-MM-DD: <reason>` to the file body and keep it.
 5. MEMORY.md stays under ~120 lines. If over, the weakest hooks move to the attic first.
 
 ## Phase 4 — gbrain refresh
 
 ```
-submit_job sync (repo: ~/git/curling)   # + any other registered sources
+submit_job sync   # for each registered source (mcp__gbrain__sources_list)
 submit_job backlinks
 ```
 Then verify jobs actually reach `active`/`completed` (list_jobs) — the worker has silently not run before (Jun 25 sync died `cancelled`, 0 attempts). If jobs sit `waiting` >5 min, note "gbrain worker down" in the log and surface it to the user rather than silently skipping.

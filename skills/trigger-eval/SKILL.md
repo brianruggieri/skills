@@ -25,7 +25,14 @@ See `README.md` for mechanics, caveats, and the model-dependence note.
 
 ## Security & Trust Boundary
 
-Prompt files are self-authored — this skill only runs prompts you wrote. Each
-run shells out to `claude -p` with `--permission-mode dontAsk` in a neutral
-scratch cwd (`/tmp/te-w<cksum>`), never the target repo, so a stray prompt
-can't reach or mutate real project files.
+Prompt files are self-authored — this skill only runs prompts you wrote. By
+default each run shells out to `claude -p` in a neutral scratch cwd
+(`/tmp/te-w<cksum>`), never the target repo, with `--permission-mode dontAsk`
+— safe because the dir is disposable, so a stray prompt can't reach real
+project files.
+
+If you pass `--cwd DIR` (a real repo, e.g. for project-scoped skills), the run
+drops to `--permission-mode default` (prompts) so prompt-matrix text can't
+silently mutate that repo under `dontAsk`, and prints a warning. Set
+`TRIGGER_EVAL_UNSAFE_CWD=1` to force `dontAsk` back on when you know the cwd is
+disposable.

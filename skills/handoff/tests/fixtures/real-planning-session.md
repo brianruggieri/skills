@@ -72,65 +72,65 @@ I'll compile the full synthesis as soon as the agents report back. They're each 
 
 ### USER
 <task-notification>
-<task-id>afc169f16c7a0821f</task-id>
-<tool-use-id>toolu_01GDvUxcDP8axvjDX6gczCo7</tool-use-id>
-<output-file>/private/tmp/claude-501/-Users-dev-git-skills/00000000-0000-00
+<task-id>task-EXAMPLE01</task-id>
+<tool-use-id>toolu_EXAMPLE01</tool-use-id>
+<output-file>/private/tmp/claude-example/-Users-example-git-skills/00000000-0000-00
 [truncated — 18018 chars omitted]
 947</duration_ms></usage>
 </task-notification>
-Full transcript available at: /private/tmp/claude-501/-Users-dev-git-skills/00000000-0000-0000-0000-000000000000/tasks/afc169f16c7a0821f.output
+Full transcript available at: /private/tmp/claude-example/-Users-example-git-skills/00000000-0000-0000-0000-000000000000/tasks/task-EXAMPLE01.output
 
 ### CLAUDE
 Security & Reliability agent is back with some sharp findings — 3 critical issues (no secret redaction, shell injection in launcher, heredoc expansion in hook). Waiting on the other 4 agents.
 
 ### USER
 <task-notification>
-<task-id>a00b7c581da0e8063</task-id>
-<tool-use-id>toolu_01HKNbkBeSQ3hhpoKrdxbkEx</tool-use-id>
-<output-file>/private/tmp/claude-501/-Users-dev-git-skills/00000000-0000-00
+<task-id>task-EXAMPLE02</task-id>
+<tool-use-id>toolu_EXAMPLE02</tool-use-id>
+<output-file>/private/tmp/claude-example/-Users-example-git-skills/00000000-0000-00
 [truncated — 14193 chars omitted]
 927</duration_ms></usage>
 </task-notification>
-Full transcript available at: /private/tmp/claude-501/-Users-dev-git-skills/00000000-0000-0000-0000-000000000000/tasks/a00b7c581da0e8063.output
+Full transcript available at: /private/tmp/claude-example/-Users-example-git-skills/00000000-0000-0000-0000-000000000000/tasks/task-EXAMPLE02.output
 
 ### CLAUDE
 DX/UX agent back with a **showstopper finding**: the JSONL format assumed by the fixtures is completely wrong vs real Claude Code sessions (`"human"` vs `"user"`, flat entries vs nested content arrays). The tool would produce zero useful output on real data. Waiting on 3 more agents.
 
 ### USER
 <task-notification>
-<task-id>ab01eac5c604aad8a</task-id>
-<tool-use-id>toolu_01Ph54Aw2H4rTWSV7VySCUr8</tool-use-id>
-<output-file>/private/tmp/claude-501/-Users-dev-git-skills/00000000-0000-00
+<task-id>task-EXAMPLE03</task-id>
+<tool-use-id>toolu_EXAMPLE03</tool-use-id>
+<output-file>/private/tmp/claude-example/-Users-example-git-skills/00000000-0000-00
 [truncated — 17186 chars omitted]
 880</duration_ms></usage>
 </task-notification>
-Full transcript available at: /private/tmp/claude-501/-Users-dev-git-skills/00000000-0000-0000-0000-000000000000/tasks/ab01eac5c604aad8a.output
+Full transcript available at: /private/tmp/claude-example/-Users-example-git-skills/00000000-0000-0000-0000-000000000000/tasks/task-EXAMPLE03.output
 
 ### CLAUDE
 Implementation pedant back — confirms the parallel tool call pairing is fundamentally broken and found negation-unawareness in decision matching ("definitely NOT bcrypt" → selects bcrypt). 2 agents remaining.
 
 ### USER
 <task-notification>
-<task-id>afbd06a090d047997</task-id>
-<tool-use-id>toolu_01QNt6uMwkdvtAXxPVgp7bhr</tool-use-id>
-<output-file>/private/tmp/claude-501/-Users-dev-git-skills/00000000-0000-00
+<task-id>task-EXAMPLE04</task-id>
+<tool-use-id>toolu_EXAMPLE04</tool-use-id>
+<output-file>/private/tmp/claude-example/-Users-example-git-skills/00000000-0000-00
 [truncated — 12495 chars omitted]
 190</duration_ms></usage>
 </task-notification>
-Full transcript available at: /private/tmp/claude-501/-Users-dev-git-skills/00000000-0000-0000-0000-000000000000/tasks/afbd06a090d047997.output
+Full transcript available at: /private/tmp/claude-example/-Users-example-git-skills/00000000-0000-0000-0000-000000000000/tasks/task-EXAMPLE04.output
 
 ### CLAUDE
 Skeptical architect back — confirms all the fundamental assumptions are wrong: JSONL schema, session path (`sessions/` subdir doesn't exist), hook registration format (array vs object), and `--prompt-file` flag doesn't exist. 1 agent remaining.
 
 ### USER
 <task-notification>
-<task-id>a0f34a6e1b02991b5</task-id>
-<tool-use-id>toolu_01PmGxy4PTTUL3oeksiMsdib</tool-use-id>
-<output-file>/private/tmp/claude-501/-Users-dev-git-skills/00000000-0000-00
+<task-id>task-EXAMPLE05</task-id>
+<tool-use-id>toolu_EXAMPLE05</tool-use-id>
+<output-file>/private/tmp/claude-example/-Users-example-git-skills/00000000-0000-00
 [truncated — 25232 chars omitted]
 722</duration_ms></usage>
 </task-notification>
-Full transcript available at: /private/tmp/claude-501/-Users-dev-git-skills/00000000-0000-0000-0000-000000000000/tasks/a0f34a6e1b02991b5.output
+Full transcript available at: /private/tmp/claude-example/-Users-example-git-skills/00000000-0000-0000-0000-000000000000/tasks/task-EXAMPLE05.output
 
 ### CLAUDE
 All 5 agents complete. Let me compile the unified assessment.
@@ -381,26 +381,26 @@ While they run, let me start shaping the approach options based on what we alrea
 
 ### USER
 <task-notification>
-<task-id>af8448f06fda40302</task-id>
-<tool-use-id>toolu_01MG7aRdzLHv49gjr1dq5K72</tool-use-id>
-<output-file>/private/tmp/claude-501/-Users-dev-git-skills/00000000-0000-00
+<task-id>task-EXAMPLE06</task-id>
+<tool-use-id>toolu_EXAMPLE06</tool-use-id>
+<output-file>/private/tmp/claude-example/-Users-example-git-skills/00000000-0000-00
 [truncated — 13732 chars omitted]
 708</duration_ms></usage>
 </task-notification>
-Full transcript available at: /private/tmp/claude-501/-Users-dev-git-skills/00000000-0000-0000-0000-000000000000/tasks/af8448f06fda40302.output
+Full transcript available at: /private/tmp/claude-example/-Users-example-git-skills/00000000-0000-0000-0000-000000000000/tasks/task-EXAMPLE06.output
 
 ### CLAUDE
 Enrichment analyzer back with strong recommendations — 800-token target, 6-section document format, explicit extraction prompt design with anti-hallucination guardrails. Waiting on the skill pattern researcher.
 
 ### USER
 <task-notification>
-<task-id>afbfcd3017bbf6918</task-id>
-<tool-use-id>toolu_0187nkG9AaekY3gBz79NQSYd</tool-use-id>
-<output-file>/private/tmp/claude-501/-Users-dev-git-skills/00000000-0000-00
+<task-id>task-EXAMPLE07</task-id>
+<tool-use-id>toolu_EXAMPLE07</tool-use-id>
+<output-file>/private/tmp/claude-example/-Users-example-git-skills/00000000-0000-00
 [truncated — 9858 chars omitted]
 379</duration_ms></usage>
 </task-notification>
-Full transcript available at: /private/tmp/claude-501/-Users-dev-git-skills/00000000-0000-0000-0000-000000000000/tasks/afbfcd3017bbf6918.output
+Full transcript available at: /private/tmp/claude-example/-Users-example-git-skills/00000000-0000-0000-0000-000000000000/tasks/task-EXAMPLE07.output
 
 ### CLAUDE
 Both subagents back. Now I have everything to present the design. Here are the key architectural decisions:

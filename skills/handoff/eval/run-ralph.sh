@@ -11,8 +11,7 @@ set -euo pipefail
 SKILL_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$(git rev-parse --show-toplevel)"
 
-# Refuse to run outside the skills repo. --dangerously-skip-permissions
-# below disables all guardrails, so we double-check we're in the project
+# Refuse to run outside the skills repo. We double-check we're in the project
 # this script was built for (eval/RALPH-PROMPT.md being present is the
 # strongest indicator), not some unrelated repo the user happened to cd
 # into.
@@ -22,7 +21,20 @@ if [ ! -f "$SKILL_DIR/eval/RALPH-PROMPT.md" ] || [ ! -f "$SKILL_DIR/SKILL.md" ];
 	exit 1
 fi
 
-MAX_ITERATIONS="${1:-10}"
+# By default the loop runs with --permission-mode acceptEdits: agents can
+# read/write files and dispatch subagents, but nothing bypasses the guardrails
+# entirely. --unsafe restores --dangerously-skip-permissions for people who
+# know the transcript fixtures are trusted.
+PERM_ARGS="--permission-mode acceptEdits"
+MAX_ITERATIONS=10
+while [ $# -gt 0 ]; do case "$1" in
+	--unsafe)
+		PERM_ARGS="--dangerously-skip-permissions"
+		echo "WARNING: --unsafe — running with --dangerously-skip-permissions; all guardrails off. Only do this on trusted fixtures in the skills repo." >&2
+		shift ;;
+	*) MAX_ITERATIONS="$1"; shift ;;
+esac; done
+
 PROMPT_FILE="$SKILL_DIR/eval/RALPH-PROMPT.md"
 SCORECARD_DIR="$SKILL_DIR/tests/output/eval"
 
@@ -36,18 +48,11 @@ while [ "$iteration" -lt "$MAX_ITERATIONS" ]; do
 	echo "═══════════════════════════════════════════"
 	echo ""
 
-	# Run fresh Claude session with the prompt
-	# NOTE: --dangerously-skip-permissions is used because the ralph loop needs
-	# to read/write files and dispatch agents autonomously across iterations.
-	# Only run this in the skills repo, never in production codebases.
-	if [ "${RALPH_SKIP_PERMISSIONS:-}" = "1" ]; then
-		cat "$PROMPT_FILE" | claude --dangerously-skip-permissions
-	else
-		echo "WARNING: This script runs Claude with full file/agent access."
-		echo "Set RALPH_SKIP_PERMISSIONS=1 to proceed, or run interactively:"
-		echo "  cat $PROMPT_FILE | claude"
-		exit 1
-	fi
+	# Run fresh Claude session with the prompt. Default guardrails let the loop
+	# read/write files and dispatch agents autonomously (acceptEdits); --unsafe
+	# swaps in --dangerously-skip-permissions. Only run this in the skills repo,
+	# never in production codebases.
+	cat "$PROMPT_FILE" | claude $PERM_ARGS
 
 	# Check if all fixtures passed
 	all_pass=true

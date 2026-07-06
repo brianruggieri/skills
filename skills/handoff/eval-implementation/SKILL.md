@@ -104,8 +104,12 @@ Strip `feat/` prefix from `--source-branch`. E.g., `feat/eligibility-hard-caps` 
    ```
    Run it and capture stdout:
    ```bash
-   python "$COMPARE" --state-file "$STATE_FILE"
+   python "$COMPARE" --state-file "$STATE_FILE" --run-tests
    ```
+   `--run-tests` runs pytest in each worktree to get P2P regression counts.
+   This EXECUTES arbitrary code from the evaluated branches — only pass it when
+   both branches are trusted (your own eval runs). Omit it to skip pytest
+   (P2P shown as `[not recorded]`) when evaluating untrusted branches.
 
 3. Split stdout on `---DIFF---` sentinel: everything before = metrics table; everything after = full diff.
 

@@ -280,12 +280,14 @@ def compute_git_metrics(branch: str, worktree: str, repo_root: str) -> dict:
     }
 
 
-def compute_f2p_p2p(branch: str, worktree: str, python_bin: str | None) -> dict:
+def compute_f2p_p2p(branch: str, worktree: str, python_bin: str | None, run_tests: bool = False) -> dict:
     """
     Compute F2P (new test functions) and P2P (regressions) counts.
 
     F2P: count new test function definitions added vs main.
     P2P: run pytest in the worktree and count failures (requires worktree to exist).
+         Running pytest executes arbitrary code from the evaluated branch, so it is
+         opt-in via run_tests (--run-tests); off by default.
     """
     if not Path(worktree).is_dir():
         return {"f2p_count": None, "p2p_regressions": None, "tests_passed": None}
@@ -300,8 +302,17 @@ def compute_f2p_p2p(branch: str, worktree: str, python_bin: str | None) -> dict:
         if line.startswith("+") and re.match(r"^\+\s*def test_", line)
     )
 
-    # P2P: run pytest, count failures
-    if python_bin:
+    # P2P: run pytest, count failures. Skipped unless --run-tests, since it
+    # executes arbitrary code from the evaluated branch.
+    if not run_tests:
+        print(
+            f"notice: skipping pytest for {branch} (P2P not measured). "
+            f"Pass --run-tests to run it — unsafe on untrusted branches.",
+            file=sys.stderr,
+        )
+        tests_passed = None
+        p2p_regressions = None
+    elif python_bin:
         result = subprocess.run(
             [python_bin, "-m", "pytest", "--tb=no", "-q"],
             capture_output=True, text=True, cwd=worktree, timeout=300
@@ -409,6 +420,11 @@ def main():
     parser.add_argument("--no-handoff-branch")
     parser.add_argument("--with-handoff-worktree")
     parser.add_argument("--no-handoff-worktree")
+    parser.add_argument(
+        "--run-tests",
+        action="store_true",
+        help="Run pytest in each worktree for P2P counts. UNSAFE: executes arbitrary code from the evaluated branches. Off by default.",
+    )
     args = parser.parse_args()
 
     # Resolve repo root
@@ -440,10 +456,10 @@ def main():
     # Add git metrics
     if wh_branch:
         ma.update(compute_git_metrics(wh_branch, wh_worktree, repo_root))
-        ma.update(compute_f2p_p2p(wh_branch, wh_worktree, python_bin))
+        ma.update(compute_f2p_p2p(wh_branch, wh_worktree, python_bin, args.run_tests))
     if nh_branch:
         mb.update(compute_git_metrics(nh_branch, nh_worktree, repo_root))
-        mb.update(compute_f2p_p2p(nh_branch, nh_worktree, python_bin))
+        mb.update(compute_f2p_p2p(nh_branch, nh_worktree, python_bin, args.run_tests))
 
     # Attach metadata
     ma["branch"] = wh_branch

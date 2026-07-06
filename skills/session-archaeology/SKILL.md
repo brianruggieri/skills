@@ -9,7 +9,7 @@ Mine Claude Code session history for evidence. Every finding must be cited (sess
 
 ## Corpus map
 
-- **Sessions:** `~/.claude/projects/<cwd-slug>/*.jsonl` — slug is the cwd with `/` → `-` (e.g. `-Users-brianruggieri-git-curling`).
+- **Sessions:** `~/.claude/projects/<cwd-slug>/*.jsonl` — slug is the cwd with `/` → `-` (e.g. `-Users-example-git-myrepo`). Resolve your own project slugs at runtime rather than hardcoding a home dir: `ls ~/.claude/projects/`.
 - **Per-project memory:** `~/.claude/projects/<slug>/memory/MEMORY.md` — read first; often already answers "have we decided this".
 - **Archive fallback:** `~/.claude-archive/projects/` for pre-Mar-10-2026 history (retention was 30 days before `cleanupPeriodDays: 99999`).
 - **JSONL shape:** one JSON object per line. Human/assistant turns are wrapped: `{"type":"user"|"assistant","message":{...},"timestamp":...,"sessionId":...}`. Also present: progress events, tool results, subagent sidecar files. Human input = `type == "user"` where `message.content` is a string (or text block) and there's no `toolUseResult`.

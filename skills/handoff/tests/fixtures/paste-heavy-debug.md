@@ -211,7 +211,7 @@ services:
       - "5432:5432"
     environment:
       POSTGRES_USER: dev
-      POSTGRES_PASSWORD: devpass
+      POSTGRES_PASSWORD: [TEST_PASSWORD]
       POSTGRES_DB: webhooks
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U dev"]
@@ -230,7 +230,7 @@ services:
         condition: service_healthy
     environment:
       - REDIS_URL=redis://redis:6379
-      - DATABASE_URL=postgresql://dev:devpass@postgres:5432/webhooks
+      - DATABASE_URL=postgresql://dev:[TEST_DB_URL_PASSWORD]@postgres:5432/webhooks
       - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY}
       - STRIPE_WEBHOOK_SECRET=${STRIPE_WEBHOOK_SECRET}
 ```
@@ -322,7 +322,7 @@ Here's what I've added:
 **.env.test**:
 ```
 REDIS_URL=redis://localhost:6379
-STRIPE_WEBHOOK_SECRET=whsec_test_secret_for_integration_tests
+STRIPE_WEBHOOK_SECRET=[TEST_WEBHOOK_SECRET]
 ```
 
 ### USER

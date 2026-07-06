@@ -11,6 +11,8 @@ Chase AI's skill-evals post, rebuilt on our headless-claude-hygiene rules).
 ./run.sh brain-sleep                 # uses prompts/brain-sleep.txt, haiku
 ./run.sh my-skill --model claude-sonnet-5
 ./run.sh curling-research --cwd ~/git/curling   # project-scoped skills need an in-scope cwd
+                                                 # --cwd runs --permission-mode default (prompts) so
+                                                 # prompt text can't mutate the repo; TRIGGER_EVAL_UNSAFE_CWD=1 forces dontAsk
 ```
 
 Exit 0 = perfect matrix; nonzero = at least one MISS (or quota gate refused).

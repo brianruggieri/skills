@@ -44,6 +44,23 @@ for t in gtimeout timeout; do command -v "$t" >/dev/null 2>&1 && { TIMEOUT="$t 1
 
 # NEUTRAL dir name — naming it after the skill under test leaks the answer
 # into the model's cwd and poisons every negative prompt (found on first run)
+#
+# Permission mode is tied to whose dir we run in. The auto-generated scratch
+# dir is disposable, so dontAsk (no prompts) is safe. A caller-supplied --cwd
+# is a REAL repo: dontAsk there would let prompt-matrix text mutate its files,
+# so we drop to --permission-mode default (prompts) and warn. Override with
+# TRIGGER_EVAL_UNSAFE_CWD=1 if you know the cwd is disposable.
+if [ -n "$RUN_CWD" ]; then
+	if [ "${TRIGGER_EVAL_UNSAFE_CWD:-}" = "1" ]; then
+		PERM_MODE="dontAsk"
+		echo "warning: TRIGGER_EVAL_UNSAFE_CWD=1 — running dontAsk in caller cwd $RUN_CWD; prompt text can mutate it" >&2
+	else
+		PERM_MODE="default"
+		echo "warning: --cwd is a real dir — running --permission-mode default (prompts) so prompt text can't mutate it. Set TRIGGER_EVAL_UNSAFE_CWD=1 to force dontAsk." >&2
+	fi
+else
+	PERM_MODE="dontAsk"
+fi
 RUN_CWD="${RUN_CWD:-/tmp/te-w$(printf '%s' "$SKILL" | cksum | cut -d' ' -f1)}"
 mkdir -p "$RUN_CWD"
 RUN_CWD="$(cd "$RUN_CWD" && pwd -P)"   # resolve /tmp → /private/tmp etc.
@@ -58,7 +75,7 @@ while IFS= read -r line; do
 	before=$(ls "$PROJ_DIR"/*.jsonl 2>/dev/null | wc -l)
 	# env -u: nested claude -p hangs inside a live session otherwise
 	( cd "$RUN_CWD" && env -u CLAUDECODE -u CLAUDE_CODE_ENTRYPOINT -u CLAUDE_CODE_SESSION_ID \
-		$TIMEOUT claude -p "$prompt" --model "$MODEL" --max-turns 2 --permission-mode dontAsk ) >/dev/null 2>&1
+		$TIMEOUT claude -p "$prompt" --model "$MODEL" --max-turns 2 --permission-mode "$PERM_MODE" ) >/dev/null 2>&1
 
 	# newest transcript = this run
 	f=$(ls -t "$PROJ_DIR"/*.jsonl 2>/dev/null | head -1)

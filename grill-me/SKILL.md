@@ -1,16 +1,7 @@
 ---
 name: grill-me
 description: Interview the user relentlessly about a plan or design until every branch of the decision tree is resolved. Use when user wants to stress-test a proposal, get grilled on their design, or mentions "grill me".
-allowed-tools:
-  - Read
-  - Write
-  - Grep
-  - Glob
-  - Bash
-  - Agent
-  - AskUserQuestion
-  - WebSearch
-  - WebFetch
+allowed-tools: Read Write Grep Glob Bash Agent AskUserQuestion WebSearch WebFetch
 ---
 
 # Grill Me

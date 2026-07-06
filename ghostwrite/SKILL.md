@@ -1,15 +1,7 @@
 ---
 name: ghostwrite
 description: Write text in the user's authentic voice using a quantitative voice profile built from their session logs. Two modes — build a profile from scratch, or write using an existing one. Use when asked to "ghostwrite", "write in my voice", "draft something that sounds like me", or "build my voice profile".
-allowed-tools:
-  - Read
-  - Write
-  - Edit
-  - Bash
-  - Glob
-  - Grep
-  - Agent
-  - AskUserQuestion
+allowed-tools: Read Write Edit Bash Glob Grep Agent AskUserQuestion
 ---
 
 # Ghostwrite

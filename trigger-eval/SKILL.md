@@ -1,11 +1,7 @@
 ---
 name: trigger-eval
 description: Use when shipping or editing a skill's frontmatter description, or when a skill seems to fire on wrong prompts / never fire — runs the +/- prompt matrix in prompts/<skill>.txt via ./run.sh and iterates the description until clean. NOT for evaluating a skill's output quality (use ab-experiment).
-allowed-tools:
-  - Read
-  - Write
-  - Edit
-  - Bash
+allowed-tools: Read Write Edit Bash
 ---
 
 # Trigger Eval

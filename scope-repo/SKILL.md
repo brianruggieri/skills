@@ -1,17 +1,7 @@
 ---
 name: scope-repo
 description: Unified codebase planning — spawns 4-9 analyst agents to scan a repo in parallel, interviews the maintainer using real findings, validates scope, and outputs a prioritized ROADMAP.md plus GitHub Issues. Requires Agent Teams enabled.
-allowed-tools:
-  - Read
-  - Write
-  - Edit
-  - Grep
-  - Glob
-  - Bash
-  - Agent
-  - AskUserQuestion
-  - WebSearch
-  - WebFetch
+allowed-tools: Read Write Edit Grep Glob Bash Agent AskUserQuestion WebSearch WebFetch
 ---
 
 # scopework v3 — Unified Codebase Planning

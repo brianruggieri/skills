@@ -1,14 +1,7 @@
 ---
 name: fix-pr-reviews
 description: Assess, address, and resolve all review comments on a GitHub PR. Fix issues, push, verify tests pass, update PR description, resolve merge conflicts, and confirm CI is green. Use when a GitHub PR has review comments that need fixing. GitHub-only via gh — NOT for local Forgejo PRs (use forgejo-fix-pr-reviews) and NOT for writing a review (use code-review).
-allowed-tools:
-  - Read
-  - Write
-  - Edit
-  - Grep
-  - Glob
-  - Bash
-  - Agent
+allowed-tools: Read Write Edit Grep Glob Bash Agent
 ---
 
 # Fix PR Reviews

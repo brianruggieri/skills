@@ -1,12 +1,7 @@
 ---
 name: eval-implementation
 description: Two-phase skill for running A/B implementation experiments. Phase 1 creates worktrees and prints launch commands. Phase 2 runs compare_implementations.py, dispatches blind graders, and prints the final report.
-allowed-tools:
-  - Read
-  - Write
-  - Bash
-  - Glob
-  - Agent
+allowed-tools: Read Write Bash Glob Agent
 ---
 
 # Eval: Implementation A/B Test

@@ -1,12 +1,7 @@
 ---
 name: eval-extract
 description: Blind evaluation of the handoff extraction prompt against test fixtures. Dispatches fresh agents for extraction and grading to eliminate author bias.
-allowed-tools:
-  - Read
-  - Write
-  - Bash
-  - Glob
-  - Agent
+allowed-tools: Read Write Bash Glob Agent
 ---
 
 # Eval: Handoff Extraction

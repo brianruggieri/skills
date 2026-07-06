@@ -1,12 +1,7 @@
 ---
 name: eval-triage
 description: Blind evaluation of the fix-pr-reviews triage prompt against test fixtures. Dispatches fresh agents for triage and grading to eliminate author bias.
-allowed-tools:
-  - Read
-  - Write
-  - Bash
-  - Glob
-  - Agent
+allowed-tools: Read Write Bash Glob Agent
 ---
 
 # Eval: PR Comment Triage

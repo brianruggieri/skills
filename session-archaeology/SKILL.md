@@ -19,7 +19,7 @@ Mine Claude Code session history for evidence. Every finding must be cited (sess
 Most files in the corpus are NOT human work. Known junk populations (canonical counts — headless-claude-hygiene links here):
 
 1. **1-message haiku one-shots:** ccp's `--ai-context` summarizer. Fixture prompt: `Summarize this developer task in 3-5 words`. Drop any session whose only user message matches known fixture prompts.
-2. **Headless `--print` runs:** candidate-eval (~3,000 sessions), pulse (257 test sessions), personalities (~120 benchmark runs). These are program output, not Brian's work.
+2. **Headless `--print` runs:** candidate-eval (~3,000 sessions), pulse (257 test sessions), personalities (~120 benchmark runs). These are program output, not the user's work.
 3. **Harness-generated worktree sessions:** arc `--worktrees-*` dirs, `agent-*` worktree slugs, sculptor `-sculptor-workspaces-*` slugs.
 4. **Fixture cwds:** anything under `/private/tmp/ccp-*` or other `/private/tmp` slugs.
 
@@ -71,4 +71,4 @@ Every claim cites its source: **session id (short), date, project, and a direct 
 
 > "exact quote from the session" — `a1b2c3d4`, 2026-03-28, ~/git/candidate-eval
 
-If a question can't be answered from the corpus, say so — don't extrapolate from memory files alone. Distinguish "Brian said X" (user message) from "Claude did X" (assistant/tool activity).
+If a question can't be answered from the corpus, say so — don't extrapolate from memory files alone. Distinguish "the user said X" (user message) from "Claude did X" (assistant/tool activity).

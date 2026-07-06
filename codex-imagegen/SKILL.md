@@ -1,6 +1,6 @@
 ---
 name: codex-imagegen
-description: "Use when Brian asks to generate or edit an image (game asset, blog image, UI mockup, texture) from the CLI or from an agent — subscription-billed, no API key. Wraps OpenAI Codex CLI's $imagegen (gpt-image-2) on ChatGPT-subscription auth. NOT for viewing/analyzing existing images (Claude reads those natively) or for diagrams-from-text (use /drawio or /diagram)."
+description: "Use when the user asks to generate or edit an image (game asset, blog image, UI mockup, texture) from the CLI or from an agent — subscription-billed, no API key. Wraps OpenAI Codex CLI's $imagegen (gpt-image-2) on ChatGPT-subscription auth. NOT for viewing/analyzing existing images (Claude reads those natively) or for diagrams-from-text (use /drawio or /diagram)."
 ---
 
 # codex-imagegen — subscription-billed image generation
@@ -34,7 +34,7 @@ Every flag was earned on the first live run:
 - Each image burns the SHARED Codex pool ~3-5x faster than a coding turn.
   Fine for onesies; for a batch (>5 images) STOP and offer the two escape
   hatches instead of draining the sub:
-  1. `OPENAI_API_KEY=… codex exec …` → API billing (per Brian's global rule:
+  1. `OPENAI_API_KEY=… codex exec …` → API billing (per the user's global rule:
      API only when subscription isn't practical — a big batch qualifies).
   2. Local Flux/SD via ComfyUI on Apple Silicon — zero marginal cost, offline;
      the right answer for iterative texture loops (the stone-texture ralph-loop

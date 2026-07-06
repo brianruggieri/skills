@@ -9,7 +9,7 @@ measured exploration quality in a `/grill-me` session).
 
 ## Setup
 
-- **Project:** candidate-eval (privacy-first job fit assessment pipeline)
+- **Project:** candidate-eval (internal Python assessment pipeline)
 - **Codebase:** ~11,000 LOC Python, 1161 tests, Chrome extension, FastAPI server
 - **Feature:** Eligibility hard caps — new `eligibility_evaluator.py` module + grade-to-F cap when binary gates unmet
 - **Plan:** `docs/superpowers/plans/2026-03-24-eligibility-hard-caps.md` (6-task TDD plan)

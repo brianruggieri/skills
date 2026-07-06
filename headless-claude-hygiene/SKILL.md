@@ -17,7 +17,7 @@ Headless `claude -p` calls burn the same 5-hour subscription window as interacti
 
 ## Preflight checklist (run in order, before dispatch)
 
-1. **Nested-session guard.** Check `echo "$CLAUDE_CODE_SESSION_ID"`. If set, you are INSIDE an interactive Claude session — `claude -p` will hang (proven in claude_personalities). Never run it directly. Instead, print the exact command(s) for Brian to paste into a separate terminal:
+1. **Nested-session guard.** Check `echo "$CLAUDE_CODE_SESSION_ID"`. If set, you are INSIDE an interactive Claude session — `claude -p` will hang (proven in claude_personalities). Never run it directly. Instead, print the exact command(s) for the user to paste into a separate terminal:
    ```bash
    # Run this in a fresh terminal, not inside Claude Code:
    cd /path/to/scratch && claude -p "..." --output-format json
@@ -88,4 +88,4 @@ Note the interaction with `cleanupPeriodDays: 99999`: nothing auto-purges, so he
 
 ## Security & trust boundary
 
-Session JSONLs are Brian's private conversation data. Audit mode is read-only by default; moving/archiving requires his confirmation; deletion is never offered as a default. Do not pipe session contents to external services or include transcript excerpts in reports beyond what identifies junk (line counts, prompt signatures, sizes).
+Session JSONLs are the user's private conversation data. Audit mode is read-only by default; moving/archiving requires his confirmation; deletion is never offered as a default. Do not pipe session contents to external services or include transcript excerpts in reports beyond what identifies junk (line counts, prompt signatures, sizes).

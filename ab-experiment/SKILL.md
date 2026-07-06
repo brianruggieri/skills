@@ -1,6 +1,6 @@
 ---
 name: ab-experiment
-description: "Use when Brian says 'run this side by side', 'A/B this', or wants to measure whether a prompting/context/workflow change (handoff doc, CLAUDE.md variant, new skill, plan style) actually helps. Runs two identical-plan sessions differing by one treatment, mines both session JSONLs, blind-grades outputs, commits an evidence doc. NOT for implementing A/B tests or feature flags in product code."
+description: "Use when the user says 'run this side by side', 'A/B this', or wants to measure whether a prompting/context/workflow change (handoff doc, CLAUDE.md variant, new skill, plan style) actually helps. Runs two identical-plan sessions differing by one treatment, mines both session JSONLs, blind-grades outputs, commits an evidence doc. NOT for implementing A/B tests or feature flags in product code."
 ---
 
 # /ab-experiment
@@ -14,7 +14,7 @@ Existing tooling — reuse, do not rewrite:
 
 ## 1. Setup
 
-- [ ] State the hypothesis in one sentence and identify the treatment. Exactly ONE variable differs between arms. If the proposal bundles two changes, stop and ask Brian which one to test.
+- [ ] State the hypothesis in one sentence and identify the treatment. Exactly ONE variable differs between arms. If the proposal bundles two changes, stop and ask the user which one to test.
 - [ ] Name the arms after the treatment: `.worktrees/with-<X>` and `.worktrees/no-<X>`, both branched from the same base commit:
   ```bash
   git worktree add .worktrees/with-<X> -b eval/with-<X> <base>
@@ -27,7 +27,7 @@ Existing tooling — reuse, do not rewrite:
 ## 2. Run
 
 - [ ] Before launching, check the 5-hour window: `jq .five_hour.utilization ~/.claude/usage-state.json` (or run `~/.claude/scripts/claude-usage-gate.sh`) — if utilization >80%, defer the run.
-- [ ] If THIS session is interactive: do NOT run bare `claude -p` inline — nested interactive→headless hangs. For any in-session launch use the sanctioned escape hatch `env -u CLAUDECODE -u CLAUDE_CODE_ENTRYPOINT claude -p ...` (as a background Bash job + Monitor), or print both commands for Brian to run in a separate terminal.
+- [ ] If THIS session is interactive: do NOT run bare `claude -p` inline — nested interactive→headless hangs. For any in-session launch use the sanctioned escape hatch `env -u CLAUDECODE -u CLAUDE_CODE_ENTRYPOINT claude -p ...` (as a background Bash job + Monitor), or print both commands for the user to run in a separate terminal.
 - [ ] Run both arms in the same wall-clock window where possible (same model snapshot, same load conditions).
 - [ ] On API 401/500 mid-run (headless OAuth tokens expire ~8h and do NOT auto-refresh; the 401 lands in the session JSONL, not stderr — process just exits rc=1): relaunch the dead arm and aggregate metrics across all runs of that arm (Mar 24 precedent). Note the relaunch in the evidence doc.
 
@@ -74,5 +74,5 @@ Existing tooling — reuse, do not rewrite:
 - Effective tokens include cache_read + cache_creation.
 - Graders without a rubric inflate; correctness bugs that pass tests need explicit −1.5 to −2 deductions.
 - Evals run as subagents on subscription, never API.
-- Nested `claude -p` from an interactive session hangs — hand launch commands to Brian.
+- Nested `claude -p` from an interactive session hangs — hand launch commands to the user.
 - Headless runs >8h die on OAuth 401 buried in the JSONL; relaunch and aggregate.

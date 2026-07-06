@@ -1,6 +1,6 @@
 ---
 name: tiered-fanout
-description: "Use when dispatching subagents at a multi-issue epic, cleanup pass, or 3+ parallel implementation plans — before creating worktrees or spawning anything. Classifies work into safe-parallel vs shared-surface-serial tiers and applies Brian's proven dispatch guardrails."
+description: "Use when dispatching subagents at a multi-issue epic, cleanup pass, or 3+ parallel implementation plans — before creating worktrees or spawning anything. Classifies work into safe-parallel vs shared-surface-serial tiers and applies proven dispatch guardrails."
 ---
 
 # /tiered-fanout

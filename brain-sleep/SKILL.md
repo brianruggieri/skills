@@ -1,6 +1,6 @@
 ---
 name: brain-sleep
-description: "Use ONLY when Brian explicitly asks to run the memory consolidation cycle — 'run brain sleep', 'brain-sleep', 'consolidate your memories', 'run the decay pass' — or when invoked by the weekly schedule. Distills new session logs into memory files, evicts stale ones, refreshes gbrain. NOT for summarizing a session, answering what-did-I-do-recently questions (use session-archaeology), or any code/repo cleanup."
+description: "Use ONLY when the user explicitly asks to run the memory consolidation cycle — 'run brain sleep', 'brain-sleep', 'consolidate your memories', 'run the decay pass' — or when invoked by the weekly schedule. Distills new session logs into memory files, evicts stale ones, refreshes gbrain. NOT for summarizing a session, answering what-did-I-do-recently questions (use session-archaeology), or any code/repo cleanup."
 ---
 
 # /brain-sleep — weekly consolidation + decay cycle
@@ -39,7 +39,7 @@ For every file in `~/.claude/projects/-Users-brianruggieri/memory/`:
 submit_job sync (repo: ~/git/curling)   # + any other registered sources
 submit_job backlinks
 ```
-Then verify jobs actually reach `active`/`completed` (list_jobs) — the worker has silently not run before (Jun 25 sync died `cancelled`, 0 attempts). If jobs sit `waiting` >5 min, note "gbrain worker down" in the log and surface it to Brian rather than silently skipping.
+Then verify jobs actually reach `active`/`completed` (list_jobs) — the worker has silently not run before (Jun 25 sync died `cancelled`, 0 attempts). If jobs sit `waiting` >5 min, note "gbrain worker down" in the log and surface it to the user rather than silently skipping.
 
 ## Phase 5 — Close
 

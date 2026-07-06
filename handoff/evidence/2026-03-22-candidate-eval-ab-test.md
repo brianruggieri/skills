@@ -4,7 +4,7 @@ Real-world comparison of `/grill-me` sessions with and without a handoff documen
 
 ## Setup
 
-- **Project:** candidate-eval (privacy-first job fit assessment pipeline)
+- **Project:** candidate-eval (internal Python assessment pipeline)
 - **Codebase:** ~10,700 LOC Python, 931 tests, Chrome extension, FastAPI server
 - **Prompt:** `/grill-me` → "next steps and current implementation and user flow"
 - **Model:** Claude Opus 4.6 (1M context) with high effort
@@ -26,7 +26,7 @@ Handoff document: ~850 tokens covering summary, 6 decisions, 5 do-not-retry item
 - **~2 minutes** to first grilling question
 
 ### First Question
-> "You have a tool that requires — before the browser extension does anything useful — that the user has: (1) installed the Python package, (2) scanned their sessions with a whitelist, (3) either parsed a resume or curated one, (4) merged profiles, and (5) started the server. That's at least 5 CLI commands with correct arguments before a single LinkedIn assessment works. What happens when someone installs this for the first time and clicks the extension icon?"
+> "You have a tool that requires — before the browser extension does anything useful — that the user has: (1) installed the Python package, (2) scanned their sessions with a whitelist, (3) either parsed a resume or curated one, (4) merged profiles, and (5) started the server. That's at least 5 CLI commands with correct arguments before a single profile assessment works. What happens when someone installs this for the first time and clicks the extension icon?"
 
 Went straight to a high-value UX gap (onboarding friction) because it already knew the architecture and could focus on user flow analysis.
 
@@ -47,7 +47,7 @@ No handoff, no system prompt injection. Same `/grill-me` → same prompt.
 - Hit file size limits multiple times, had to retry with offset/limit
 
 ### First Question
-> "You call this a 'portfolio piece, not a product.' But the codebase has SQLite caching, a Chrome extension with dashboard and shortlisting, a FastAPI server, batch assessment, fire-and-forget background jobs, and a delivery pipeline to roojerry.com. That's product-level infrastructure for something you claim isn't a product. What is the actual end state you're building toward?"
+> "You call this a 'portfolio piece, not a product.' But the codebase has SQLite caching, a Chrome extension with dashboard and shortlisting, a FastAPI server, batch assessment, fire-and-forget background jobs, and an external delivery pipeline. That's product-level infrastructure for something you claim isn't a product. What is the actual end state you're building toward?"
 
 Also a great question — but it took 4x the resources and 2x the time to get there.
 

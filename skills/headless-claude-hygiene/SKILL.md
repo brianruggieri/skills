@@ -1,6 +1,6 @@
 ---
 name: headless-claude-hygiene
-description: "Use BEFORE launching any batch/pipeline/test that shells out to `claude -p` / `claude --print`, when session usage runs hot mid-day, or when ~/.claude/projects session counts look inflated. Preflights quota, prevents session-store pollution, and guards against nested-session hangs."
+description: "Use BEFORE launching any batch, pipeline, or test suite that shells out to `claude -p`/`claude --print`, when the user says 'session usage is running hot', or when ~/.claude/projects fills with junk sessions from automated runs. Preflights quota, prevents session-store pollution, guards nested-session hangs. NOT for running a single interactive claude prompt, and NOT for general shell/script performance questions."
 ---
 
 # /headless-claude-hygiene

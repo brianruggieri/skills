@@ -1,6 +1,6 @@
 ---
 name: handoff
-description: Extract structured context from a planning session and generate a handoff document for a fresh build session. Captures decisions, negative knowledge, constraints, and next steps. Use when a planning session is complete and you want to start building in a clean context window.
+description: "Extract structured context from a completed planning session and generate a handoff document plus kickoff prompt for a fresh build session — use when the user says 'write a handoff doc', 'capture the decisions/constraints for a new session', or finishes planning and wants to build in a clean context window. Captures decisions, negative knowledge, constraints, next steps. NOT for handing work to human teammates or ticket systems, and NOT for summarizing past sessions (use session-archaeology)."
 allowed-tools: Read Write Edit Bash Glob Grep AskUserQuestion
 ---
 

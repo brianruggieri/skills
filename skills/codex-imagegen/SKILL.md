@@ -1,6 +1,6 @@
 ---
 name: codex-imagegen
-description: "Use when the user asks to generate or edit an image (game asset, blog image, UI mockup, texture) from the CLI or from an agent — subscription-billed, no API key. Wraps OpenAI Codex CLI's $imagegen (gpt-image-2) on ChatGPT-subscription auth. NOT for viewing/analyzing existing images (Claude reads those natively) or for diagrams-from-text (use a diagramming skill if installed)."
+description: "Use when the user asks to generate, create, or edit an image of any kind — game assets, sprites, textures, hero/blog images, UI mockups — from the CLI or an agent. Subscription-billed via OpenAI Codex CLI $imagegen (gpt-image-2), no API key. NOT for viewing/analyzing existing images (Claude reads those natively) or diagrams-from-text (use a diagramming skill if installed)."
 ---
 
 # codex-imagegen — subscription-billed image generation

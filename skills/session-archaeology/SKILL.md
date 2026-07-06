@@ -1,6 +1,6 @@
 ---
 name: session-archaeology
-description: "Use for any question answerable from Claude Code history: 'what have I done with X', 'check your claude logs', 'we've talked about this before', retrospectives, resume/interview material, or auditing a tool's own session behavior. Mines ~/.claude/projects JSONLs correctly, filtering tool-generated noise. NOT for consolidating/evicting memory files (use brain-sleep)."
+description: "Use for any question answerable from Claude Code session history: 'what have I done with X', 'check your claude logs', 'we've talked about this before, dig it up', retrospectives, resume/interview material, or auditing a tool's own session behavior. Mines ~/.claude/projects JSONLs correctly, filtering tool-generated noise. NOT for application/server logs, git history questions, building a writing voice profile (use ghostwrite), or consolidating memory files (use brain-sleep)."
 ---
 
 # /session-archaeology

@@ -1,6 +1,6 @@
 ---
 name: honest-assessment
-description: "Use after a subagent-heavy build sprint, before reporting benchmark/eval results, or when the user asks 'have we made progress or added bullshit to a pile?' / 'is this honestly better?'. Audits every claimed metric as field-validated vs mock-derived vs assumed, with anti-inflation grading rules. No flattery — 'small / unfinished / thin wrapper' is a welcome finding."
+description: "Use after a subagent-heavy build sprint, before reporting or believing benchmark/eval results, or when the user asks 'is this honestly better?', 'verify the metrics', 'did we make real progress or add bullshit to a pile?'. Audits every claimed metric as field-validated vs mock-derived vs assumed, with anti-inflation grading rules. No flattery — 'small / unfinished / thin wrapper' is a welcome finding. NOT a code-quality or PR review."
 ---
 
 # /honest-assessment

@@ -103,6 +103,34 @@ path? Check `~/.claude/projects/` for .jsonl files."
 5. Read the project's CLAUDE.md (if it exists) for dedup checking
 6. Apply the convention prompt to identify durable knowledge
 
+### Phase 2.5: Verify before writing (completion gate)
+
+No unverified completion claim enters the handoff. For every "done",
+"complete", "passing", or "N/N tests" statement you are about to write:
+
+1. Run the verification command NOW — the test suite, `ls` of the expected
+   result file, a count of expected artifacts.
+2. Embed the evidence inline next to the claim, e.g.
+   `Done — verified: pytest 42 passed 0 failed` or
+   `verified: results/sweep.json exists, 1200 rows`.
+3. If verification fails or cannot be run, write
+   `UNVERIFIED — run <command> to check` instead of "done".
+
+A past handoff claimed an experiment complete that had never run and the
+whole thing had to be rerun. Evidence beats transcript memory.
+
+### Phase 2.6: Prescriptiveness check
+
+Classify the plan before assembling, and tell the user which case applies:
+
+- **Fully prescriptive** — every decision already encoded (exact files,
+  function signatures, code per task). Recommend a **plan-only launch**
+  (`claude "Read <plan path> and execute it"`) and offer to skip the
+  handoff. Measured A/B (see `<skill-dir>/evidence/`): handoff adds ~27%
+  token overhead on fully prescriptive plans with no quality gain.
+- **Open-ended** — architecture, tradeoffs, or decomposition still
+  unresolved. Handoff pays here (41–70% win in the same A/B). Proceed.
+
 ### Phase 3: Assemble & Write
 
 1. **Derive the slug** from the current git branch:
@@ -184,13 +212,20 @@ Generate a ready-to-use kickoff prompt that the fresh session receives as its fi
 
 3. **Read the kickoff template** from `prompts/kickoff.md` in the skill directory.
 
-4. **Generate the kickoff prompt** by combining auto-detected context with user requirements. Follow the template structure and rules.
+4. **Generate the kickoff prompt** by combining auto-detected context with user requirements. Follow the template structure and rules, shaped by the M1 seed-prompt template (six-element kickoff shape from an Apr 2026 multi-worktree solver project) — include all six elements:
+
+   1. **Numbered read-order doc list** — exact file paths, the order to read them.
+   2. **Locked architecture up front** — decisions already made, stated as non-negotiable, before any task list.
+   3. **Phase/worktree topology** — which tasks run in parallel and in which worktrees; tasks touching the same file are serialized, never parallelized.
+   4. **Quantitative acceptance criteria** — "all 42 tests pass", "artifact X exists with N rows"; never "works correctly".
+   5. **Explicit skill to invoke, fully qualified** — e.g. `superpowers:executing-plans`, never a bare `/execute-plan`.
+   6. **Commit conventions** — brief imperative messages, no Co-Authored-By trailers.
 
 5. **Write the kickoff prompt** to two locations:
 
    a. **Companion file** for the auto-launch command:
       ```bash
-      KICKOFF_FILE=".claude/handoffs/${FILENAME%.md}.kickoff"
+      KICKOFF_FILE="$(pwd)/.claude/handoffs/${FILENAME%.md}.kickoff"
       ```
       Write the raw kickoff prompt text (no markdown fencing) to this file.
 
@@ -218,6 +253,22 @@ Present each suggestion individually. For each one, ask the user:
 
 **For memory updates:**
 Write any identified user preferences as memory updates (use the memory system directly).
+
+### Phase 6.5: Launch safety checklist
+
+Verify all three before offering any launch command or manual instructions:
+
+- [ ] **Absolute paths** for `--append-system-prompt-file` and the kickoff
+      file. `.claude/handoffs/` is gitignored, so it does not exist in
+      fresh worktrees — a relative path silently loads nothing. Every
+      launcher below uses `$(pwd)`/`$CWD`-anchored paths; keep it that way.
+- [ ] **Fully-qualified skill names** everywhere in the handoff and kickoff
+      (`superpowers:writing-plans`, not `/write-plan`) — fresh sessions
+      have died on "Unknown skill". Include a fallback line: "if the skill
+      is unavailable, proceed without it and note that in your output."
+- [ ] **Permissions/tools preflight** — list every capability subagents
+      will need (git commit, push, WebFetch, gh, network) in the kickoff
+      so the fresh session verifies access before starting work.
 
 ### Phase 7: Launch Instructions
 
@@ -278,15 +329,15 @@ After all knowledge routing is complete, offer to auto-launch the build session 
 
    **tmux:**
    ```bash
-   KICKOFF_FILE=".claude/handoffs/${FILENAME%.md}.kickoff"
+   KICKOFF_FILE="$(pwd)/.claude/handoffs/${FILENAME%.md}.kickoff"
    tmux new-window -n "handoff-${SLUG}" \
-     "cd \"$CWD\" && claude --append-system-prompt-file \".claude/handoffs/${FILENAME}\" \"\$(cat \"$KICKOFF_FILE\")\""
+     "cd \"$CWD\" && claude --append-system-prompt-file \"$CWD/.claude/handoffs/${FILENAME}\" \"\$(cat \"$KICKOFF_FILE\")\""
    ```
 
    **iTerm2:**
    ```bash
-   KICKOFF_FILE=".claude/handoffs/${FILENAME%.md}.kickoff"
-   CMD="cd \"$CWD\" && claude --append-system-prompt-file \".claude/handoffs/${FILENAME}\" \"\$(cat \"$KICKOFF_FILE\")\""
+   KICKOFF_FILE="$(pwd)/.claude/handoffs/${FILENAME%.md}.kickoff"
+   CMD="cd \"$CWD\" && claude --append-system-prompt-file \"$CWD/.claude/handoffs/${FILENAME}\" \"\$(cat \"$KICKOFF_FILE\")\""
    ESCAPED_CMD=$(printf '%s' "${CMD}" | sed 's/\\/\\\\/g; s/"/\\"/g')
    osascript \
      -e 'tell application "iTerm" to tell current window to create tab with default profile' \
@@ -295,24 +346,24 @@ After all knowledge routing is complete, offer to auto-launch the build session 
 
    **Terminal.app:**
    ```bash
-   KICKOFF_FILE=".claude/handoffs/${FILENAME%.md}.kickoff"
-   CMD="cd \"$CWD\" && claude --append-system-prompt-file \".claude/handoffs/${FILENAME}\" \"\$(cat \"$KICKOFF_FILE\")\""
+   KICKOFF_FILE="$(pwd)/.claude/handoffs/${FILENAME%.md}.kickoff"
+   CMD="cd \"$CWD\" && claude --append-system-prompt-file \"$CWD/.claude/handoffs/${FILENAME}\" \"\$(cat \"$KICKOFF_FILE\")\""
    ESCAPED_CMD=$(printf '%s' "${CMD}" | sed 's/\\/\\\\/g; s/"/\\"/g')
    osascript -e "tell application \"Terminal\" to do script \"${ESCAPED_CMD}\""
    ```
 
    **Kitty:**
    ```bash
-   KICKOFF_FILE=".claude/handoffs/${FILENAME%.md}.kickoff"
+   KICKOFF_FILE="$(pwd)/.claude/handoffs/${FILENAME%.md}.kickoff"
    kitty @ launch --type=tab --cwd="$CWD" \
-     claude --append-system-prompt-file ".claude/handoffs/${FILENAME}" "$(cat "$KICKOFF_FILE")"
+     claude --append-system-prompt-file "$CWD/.claude/handoffs/${FILENAME}" "$(cat "$KICKOFF_FILE")"
    ```
 
    **Alacritty:**
    ```bash
-   KICKOFF_FILE=".claude/handoffs/${FILENAME%.md}.kickoff"
+   KICKOFF_FILE="$(pwd)/.claude/handoffs/${FILENAME%.md}.kickoff"
    alacritty msg create-window --working-directory "$CWD" \
-     -e claude --append-system-prompt-file ".claude/handoffs/${FILENAME}" "$(cat "$KICKOFF_FILE")"
+     -e claude --append-system-prompt-file "$CWD/.claude/handoffs/${FILENAME}" "$(cat "$KICKOFF_FILE")"
    ```
 
    Then confirm:
@@ -324,15 +375,18 @@ After all knowledge routing is complete, offer to auto-launch the build session 
 
 4. **Manual fallback** (unsupported terminal, user declined, or launch failed):
 
+   Show absolute paths (expand `<ABS>` to the real repo root — relative
+   paths break when launched from a worktree):
+
    ```
    To start the build session:
-     claude --append-system-prompt-file .claude/handoffs/<FILENAME>
+     claude --append-system-prompt-file <ABS>/.claude/handoffs/<FILENAME>
 
    Then paste this kickoff prompt:
      <show contents of .kickoff file>
 
    Or as a single command:
-     claude --append-system-prompt-file .claude/handoffs/<FILENAME> "$(cat .claude/handoffs/<FILENAME%.md>.kickoff)"
+     claude --append-system-prompt-file <ABS>/.claude/handoffs/<FILENAME> "$(cat <ABS>/.claude/handoffs/<FILENAME%.md>.kickoff)"
    ```
 
 ### Cleanup
@@ -370,3 +424,7 @@ Use the session slug (from the preprocessor output) instead of the branch name f
 - Modifying CLAUDE.md without the user's approval per item
 - Generating a handoff from a build/implementation session (this is for planning sessions)
 - Fabricating decisions or constraints not explicitly discussed in the transcript
+- Writing "done/complete/passing" without inline verification evidence (Phase 2.5)
+- Relative paths in any launch command (Phase 6.5)
+- Unqualified slash-command names (`/write-plan`) in handoff or kickoff text
+- Generating a full handoff for a fully prescriptive plan without flagging the plan-only alternative (Phase 2.6)

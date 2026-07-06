@@ -48,7 +48,7 @@ Hard rules:
 ## Prerequisites
 
 - Claude Code CLI with Agent Teams enabled: `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` in settings.json env
-- Opus 4.6 model access
+- a current frontier model
 - Run from inside a git repo
 - `gh` CLI authenticated (optional — needed for GitHub Issues output)
 
@@ -385,7 +385,7 @@ Generated: {date}
 ## Kickoff
 To execute this plan:
 ```bash
-claude --prompt "Read ROADMAP.md and execute Wave 1. Items {list} are independent — use parallel subagents."
+claude "Read ROADMAP.md and execute Wave 1. Items {list} are independent — use parallel subagents."
 ```
 ```
 

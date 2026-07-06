@@ -16,7 +16,7 @@
 # Requirements:
 #   - Claude Code CLI with Agent Teams enabled
 #   - CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1 in settings.json
-#   - Opus 4.6 model access
+#   - a current frontier model
 #   - Run from inside a git repo
 #
 # Security model:
@@ -344,4 +344,4 @@ echo ""
 # $SESSION_DIR/CLAUDE.md as its spec. The target repo is referenced by
 # absolute path only.
 cd "$SESSION_DIR"
-claude --prompt "$LAUNCH_PROMPT"
+claude "$LAUNCH_PROMPT"

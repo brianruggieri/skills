@@ -1,6 +1,6 @@
 ---
 name: fix-pr-reviews
-description: Assess, address, and resolve all review comments on a GitHub PR. Fix issues, push, verify tests pass, update PR description, resolve merge conflicts, and confirm CI is green. Use when a PR has review comments that need fixing.
+description: Assess, address, and resolve all review comments on a GitHub PR. Fix issues, push, verify tests pass, update PR description, resolve merge conflicts, and confirm CI is green. Use when a GitHub PR has review comments that need fixing. GitHub-only via gh — NOT for local Forgejo PRs (use forgejo-fix-pr-reviews) and NOT for writing a review (use code-review).
 allowed-tools:
   - Read
   - Write
@@ -132,7 +132,7 @@ gh pr view --json number,url --jq '.number' 2>/dev/null
 
 4. **Check CI status:**
    ```bash
-   gh pr checks <number> --json name,state,conclusion
+   gh pr checks <number> --json name,state,bucket
    ```
 
 5. **Ensure working on the correct branch.** Validate every PR-derived ref
@@ -213,22 +213,12 @@ validate_comment_path() {
     return 1
   fi
 
-  # Reject ANY ASCII control character (\x01..\x1F plus \x7F DEL). We
-  # use `tr -cd '[:cntrl:]'` to keep ONLY control bytes and then count
-  # them with `wc -c`. Two earlier attempts were wrong:
-  #   - `LC_ALL=C [[ "$path" =~ [[:cntrl:]] ]]` doesn't work because
-  #     `[[` is a Bash keyword, not a command, so the LC_ALL prefix has
-  #     no effect; Bash's own regex `[[:cntrl:]]` also does not reliably
-  #     match newline in default locales.
-  #   - `printf '%s' "$path" | grep -q '[[:cntrl:]]'` misses embedded
-  #     newlines because grep treats them as line separators, not
-  #     content.
-  # The tr+wc pattern is byte-oriented and catches every control byte
-  # we can actually receive: \n, \t, \r, \033 (ESC), \177 (DEL), and
-  # everything in 0x01-0x1F. (NUL / \0 isn't listed because Bash
-  # variables can't carry NUL — the shell truncates the value at the
-  # NUL byte before this function sees it. Filesystem paths can't
-  # contain NUL either, so this is fine.)
+  # Reject ANY ASCII control character (\x01..\x1F plus \x7F DEL).
+  # `tr -cd '[:cntrl:]'` keeps ONLY control bytes; `wc -c` counts them.
+  # This byte-oriented pattern catches every control byte we can receive
+  # (\n, \t, \r, ESC, DEL, 0x01-0x1F) where Bash regex and grep both fail
+  # on embedded newlines. NUL can't occur — Bash truncates values at NUL
+  # and filesystem paths can't contain it.
   local _ctrl_count
   _ctrl_count=$(printf '%s' "$path" | LC_ALL=C tr -cd '[:cntrl:]' | wc -c | tr -d ' ')
   if [ "$_ctrl_count" != "0" ]; then

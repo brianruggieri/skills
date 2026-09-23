@@ -74,8 +74,10 @@ while IFS= read -r line; do
 
 	before=$(ls "$PROJ_DIR"/*.jsonl 2>/dev/null | wc -l)
 	# env -u: nested claude -p hangs inside a live session otherwise
+	# </dev/null: claude -p slurps inherited stdin, which is the prompt file
+	# itself here — without this the whole matrix leaks into every session
 	( cd "$RUN_CWD" && env -u CLAUDECODE -u CLAUDE_CODE_ENTRYPOINT -u CLAUDE_CODE_SESSION_ID \
-		$TIMEOUT claude -p "$prompt" --model "$MODEL" --max-turns 2 --permission-mode "$PERM_MODE" ) >/dev/null 2>&1
+		$TIMEOUT claude -p "$prompt" --model "$MODEL" --max-turns 2 --permission-mode "$PERM_MODE" ) >/dev/null 2>&1 </dev/null
 
 	# newest transcript = this run
 	f=$(ls -t "$PROJ_DIR"/*.jsonl 2>/dev/null | head -1)

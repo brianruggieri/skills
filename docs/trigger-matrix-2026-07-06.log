@@ -1,0 +1,128 @@
+######## ab-experiment
+usage 33% < 85% — ok
+== trigger-eval: ab-experiment (model: claude-haiku-4-5-20251001) ==
+OK   want=yes fired=yes | A/B this handoff doc against no handoff and tell me which wins
+OK   want=yes fired=yes | run these two CLAUDE.md variants side by side and measure which produc
+OK   want=yes fired=yes | does adding this skill actually help? set up a controlled experiment w
+OK   want=no fired=no | implement an A/B test flag for the new checkout button in our app
+MISS want=no fired=yes | add a feature flag so we can roll out the redesign to 10% of users
+MISS want=no fired=yes | set up split testing for the marketing landing page conversion rate
+== 4 ok, 2 miss ==
+
+######## brain-sleep
+usage 33% < 85% — ok
+== trigger-eval: brain-sleep (model: claude-haiku-4-5-20251001) ==
+OK   want=yes fired=yes | run brain sleep
+OK   want=yes fired=yes | consolidate my memories from this week
+OK   want=yes fired=yes | my memory files feel stale, clean them up
+OK   want=no fired=no | what did I work on last week?
+OK   want=no fired=no | summarize this session
+OK   want=no fired=no | clean up the dead code in this repo
+== 6 ok, 0 miss ==
+
+######## codex-imagegen
+usage 34% < 85% — ok
+== trigger-eval: codex-imagegen (model: claude-haiku-4-5-20251001) ==
+MISS want=yes fired=no | generate a pixel-art game asset for a spaceship sprite
+MISS want=yes fired=no | create a hero image for my blog post about coffee
+MISS want=yes fired=no | edit this texture to make it look weathered and rusty
+OK   want=no fired=no | what's in this screenshot I just pasted?
+OK   want=no fired=no | draw me an architecture diagram of the service topology
+OK   want=no fired=no | describe the objects in this photo
+== 3 ok, 3 miss ==
+
+######## fix-pr-reviews
+usage 35% < 85% — ok
+== trigger-eval: fix-pr-reviews (model: claude-haiku-4-5-20251001) ==
+OK   want=yes fired=yes | address all the review comments on PR #482 and push the fixes
+MISS want=yes fired=no | my GitHub PR has review feedback, resolve the comments and get CI gree
+MISS want=yes fired=no | fix the reviewer's requested changes on this pull request and update t
+OK   want=no fired=no | review this pull request and leave me comments on what to fix
+OK   want=no fired=no | the review comments are on a Forgejo PR, not GitHub
+OK   want=no fired=no | how do I request a review on my GitHub PR?
+== 4 ok, 2 miss ==
+
+######## ghostwrite
+usage 35% < 85% — ok
+== trigger-eval: ghostwrite (model: claude-haiku-4-5-20251001) ==
+OK   want=yes fired=yes | ghostwrite a reply to this email in my voice
+MISS want=yes fired=no | draft a tweet that sounds like me
+MISS want=yes fired=no | build my voice profile from my session logs
+OK   want=no fired=no | draft a press release in a formal corporate tone
+OK   want=no fired=no | turn on voice input so I can dictate this document
+OK   want=no fired=no | proofread this essay and fix the grammar
+== 4 ok, 2 miss ==
+
+######## grill-me
+usage 36% < 85% — ok
+== trigger-eval: grill-me (model: claude-haiku-4-5-20251001) ==
+OK   want=yes fired=yes | grill me on this architecture proposal
+MISS want=yes fired=no | stress-test my design decisions before I commit to them
+MISS want=yes fired=no | interrogate every branch of my plan until nothing's unresolved
+OK   want=no fired=no | run a load and stress test against the staging API
+MISS want=no fired=yes | help me prep answers for my job interview tomorrow
+MISS want=no fired=yes | what temperature should I grill these steaks at?
+== 2 ok, 4 miss ==
+
+######## handoff
+usage 37% < 85% — ok
+== trigger-eval: handoff (model: claude-haiku-4-5-20251001) ==
+MISS want=yes fired=no | we've finished planning, write me a handoff doc so I can start buildin
+MISS want=yes fired=no | capture the decisions and constraints from this planning session for a
+OK   want=yes fired=yes | generate a handoff document to carry this context into a new build ses
+MISS want=no fired=yes | hand off this ticket to the backend team
+OK   want=no fired=no | write a handoff-of-duties email for when I go on vacation
+OK   want=no fired=no | how do I hand off my SSH keys to the new laptop?
+== 3 ok, 3 miss ==
+
+######## headless-claude-hygiene
+usage 37% < 85% — ok
+== trigger-eval: headless-claude-hygiene (model: claude-haiku-4-5-20251001) ==
+OK   want=yes fired=yes | I'm about to run a batch script that calls claude -p in a loop, check 
+MISS want=yes fired=no | my session usage is running hot today and I don't know why
+MISS want=yes fired=no | the projects folder is full of junk sessions from my test suite
+MISS want=no fired=yes | run this one claude prompt for me
+OK   want=no fired=no | clean up the node_modules folders eating my disk
+MISS want=no fired=yes | why is my shell script slow?
+== 2 ok, 4 miss ==
+
+######## honest-assessment
+usage 38% < 85% — ok
+== trigger-eval: honest-assessment (model: claude-haiku-4-5-20251001) ==
+MISS want=yes fired=no | have we made progress or added bullshit to a pile?
+MISS want=yes fired=no | is this benchmark result honestly better, verify the metrics
+OK   want=no fired=no | review this PR for bugs
+OK   want=no fired=no | how are you feeling about the project?
+== 2 ok, 2 miss ==
+
+######## session-archaeology
+usage 37% < 85% — ok
+== trigger-eval: session-archaeology (model: claude-haiku-4-5-20251001) ==
+OK   want=yes fired=yes | check your claude logs for what we decided about worktrees
+OK   want=yes fired=yes | what have I done with WebGL across my projects?
+MISS want=yes fired=no | we've talked about this before, dig it up
+MISS want=no fired=yes | tail the app logs and find the error
+MISS want=no fired=yes | what does this git history show?
+OK   want=no fired=no | read the log file in /var/log
+== 3 ok, 3 miss ==
+
+######## tiered-fanout
+usage 39% < 85% — ok
+== trigger-eval: tiered-fanout (model: claude-haiku-4-5-20251001) ==
+MISS want=yes fired=no | dispatch agents to close out these 12 issues in parallel
+OK   want=yes fired=yes | fan out subagents over these three implementation plans
+OK   want=no fired=no | run these two shell commands in parallel
+MISS want=no fired=yes | what's a good way to organize this epic?
+== 2 ok, 2 miss ==
+
+######## trigger-eval
+usage 40% < 85% — ok
+== trigger-eval: trigger-eval (model: claude-haiku-4-5-20251001) ==
+MISS want=yes fired=no | my skill never fires even on obvious prompts, test its description
+MISS want=yes fired=no | I just edited this skill's frontmatter description, check it triggers 
+MISS want=yes fired=no | this skill keeps firing on the wrong prompts, run the trigger matrix
+OK   want=no fired=no | is this skill's output actually any good? grade the results
+OK   want=no fired=no | run an A/B experiment to see if the handoff skill saves tokens
+OK   want=no fired=no | how do I add allowed-tools to my skill's frontmatter?
+== 3 ok, 3 miss ==
+

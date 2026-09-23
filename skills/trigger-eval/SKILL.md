@@ -19,7 +19,9 @@ is relative to that directory (the CWD is not assumed to be the skill dir).
 2. Run `cd <SKILL_DIR> && ./run.sh <skill> [--model MODEL] [--cwd DIR]`. Exit 0
    = perfect matrix; nonzero = at least one MISS.
 3. If any prompt MISSes, edit the target skill's `description:` and re-run
-   until the matrix is clean.
+   until the matrix is clean — or run `./evolve.sh <skill>` to do this loop
+   automatically (hill-climb rewrite of the description only; see README's
+   Evolve section for guards and flags).
 
 See `README.md` for mechanics, caveats, and the model-dependence note.
 

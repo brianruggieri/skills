@@ -1,6 +1,6 @@
 ---
 name: tiered-fanout
-description: "Use when actually DISPATCHING 3+ parallel subagents/worktrees — 'fan out agents', 'close these N issues in parallel', 'dispatch agents over these plans' — before creating worktrees or spawning anything. Classifies work into safe-parallel vs shared-surface-serial tiers with proven dispatch guardrails. NOT for advice on organizing or planning an epic without dispatching agents."
+description: "Load FIRST — before any gh/git/worktree command or Agent call — whenever the user wants several coding agents working at once: 'dispatch agents to close these N issues in parallel', 'fan out subagents over these plans', 'run five agents on these tasks', 'a worktree per plan'. Classifies the work into safe-parallel vs shared-surface-serial tiers and generates the per-agent briefs; skipping it is how green-in-isolation branches ship incompatible. NOT for running shell commands or tests in parallel, and NOT for advice on organizing an epic when no agents will be dispatched."
 ---
 
 # /tiered-fanout

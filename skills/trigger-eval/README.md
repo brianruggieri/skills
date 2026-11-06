@@ -31,9 +31,11 @@ Negative prompts are the valuable half: write them as near-misses
 
 ## Mechanics & caveats
 
-- Each prompt is one headless `claude -p` capped at `--max-turns 2` on
-  haiku by default — we're testing the trigger, not the task. ~6 prompts
-  ≈ pennies and a couple of minutes.
+- Each prompt is one headless `claude -p` capped at `--max-turns 2` on the
+  current haiku by default — we're testing the trigger, not the task. ~6
+  prompts ≈ pennies and a couple of minutes. Keep the default current: the
+  2026-11-06 audit ran identical matrices on haiku 4.5 (43/68) and haiku 5.5
+  (62/68, zero over-triggers) — a stale floor model under-fires on its own.
 - Detection = a `Skill` tool invocation for the target skill in the run's
   session JSONL. Sessions persist deliberately (the transcript is the
   artifact) under neutral `/tmp/te-w<cksum>` project dirs — the name is
@@ -47,9 +49,10 @@ Negative prompts are the valuable half: write them as near-misses
   every run was handed the whole +/- list — every trigger phrase leaked into
   every negative. A matrix that "passes" with that leak proves nothing; the
   bug was found and fixed 2026-11-06 (see `docs/audits/`).
-- Trigger behavior is model-dependent: a matrix that passes on haiku is
-  a floor, not a ceiling. Re-run with your daily-driver model before
-  trusting a borderline skill description.
+- Trigger behavior is model-dependent AND stochastic: a matrix that passes
+  on haiku is a floor, not a ceiling, and a single run per prompt is one
+  sample. Re-run a borderline matrix twice, and with your daily-driver model,
+  before trusting or tuning a description on one MISS.
 - When shipping a NEW skill: write the prompt set first, run the matrix,
   then iterate the frontmatter description until clean — cheaper than
   discovering a never-fires skill months later.

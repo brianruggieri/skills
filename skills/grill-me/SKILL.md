@@ -1,6 +1,6 @@
 ---
 name: grill-me
-description: "Interrogate the user relentlessly about a plan, design, or spec until every branch of the decision tree is resolved. Use when the user says 'grill me', 'stress-test my design/plan/decisions', or wants their proposal challenged before committing. NOT for cooking or food questions, job-interview prep, or load/performance testing."
+description: "Interrogate the user relentlessly about a plan, design, or spec until every branch of the decision tree is resolved. Use when the user says 'grill me', 'stress-test my design/plan/decisions', 'interrogate my plan', or wants their proposal challenged before committing — load it even if the plan itself hasn't been pasted yet; the skill asks for it. NOT for cooking or food questions, job-interview prep, or load/performance testing."
 allowed-tools: Read Write Grep Glob Bash Agent AskUserQuestion WebSearch WebFetch
 ---
 

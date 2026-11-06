@@ -1,6 +1,6 @@
 ---
 name: ghostwrite
-description: "Write text in the user's authentic voice using a quantitative voice profile built from their session logs. Use when asked to 'ghostwrite', 'write/draft something that sounds like me', 'in my voice', or 'build my voice profile' (profile building reads session logs but belongs HERE, not session-archaeology). NOT for generic proofreading, tone-adjusted corporate copy, or dictation."
+description: "Write text in the user's authentic voice using a quantitative voice profile built from their session logs. Use when asked to 'ghostwrite', 'write/draft something that sounds like me', 'reply to this in my voice', or 'build my voice profile' (profile building reads session logs but belongs HERE, not session-archaeology). Load it BEFORE asking for the source text or topic — the skill handles intake, and the voice profile must be read first. NOT for generic proofreading, tone-adjusted corporate copy, or dictation."
 allowed-tools: Read Write Edit Bash Glob Grep Agent AskUserQuestion
 ---
 

@@ -1,6 +1,6 @@
 ---
 name: codex-imagegen
-description: "Use when the user asks to generate, create, or edit an image of any kind — game assets, sprites, textures, hero/blog images, UI mockups — from the CLI or an agent. Subscription-billed via OpenAI Codex CLI $imagegen (gpt-image-2), no API key. NOT for viewing/analyzing existing images (Claude reads those natively) or diagrams-from-text (use a diagramming skill if installed)."
+description: "Use when the user asks to generate, create, edit, retouch, or restyle an image file — game assets, sprites, textures ('make this texture weathered'), hero/blog images, UI mockups — from the CLI or an agent. Load it BEFORE searching for the source file or attempting a substitute (hand-written SVG/ASCII art is not an image) — Claude cannot produce or alter pixels itself; this routes through the OpenAI Codex CLI $imagegen (gpt-image-2), subscription-billed, no API key. NOT for viewing/analyzing/describing existing images (Claude reads those natively) or diagrams-from-text (use a diagramming skill if installed)."
 ---
 
 # codex-imagegen — subscription-billed image generation

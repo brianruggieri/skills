@@ -13,8 +13,8 @@
 #   + prompt that MUST load the skill
 #   - prompt that must NOT load the skill
 #
-# Each prompt = one headless claude call (capped at 2 turns, default
-# haiku — cheap and trigger behavior is what's under test, not task
+# Each prompt = one headless claude call (capped at 2 turns, default the
+# current haiku — cheap, and trigger behavior is what's under test, not task
 # quality). Sessions are DELIBERATELY persisted: the transcript is the
 # eval artifact we grep for the Skill invocation. They land under a
 # self-labeling junk project dir (session-archaeology filters it).
@@ -22,7 +22,10 @@ set -uo pipefail
 cd "$(dirname "$0")"
 
 SKILL="${1:?usage: run.sh <skill-name> [--model MODEL] [--cwd DIR] [--plugin-dir DIR]}"; shift
-MODEL="${TRIGGER_EVAL_MODEL:-claude-haiku-4-5-20251001}"
+# Default: the current haiku. The same matrices scored 43/68 on haiku 4.5 and
+# 62/68 on haiku 5.5 (2026-11-06 audit) — an old floor model hides nothing
+# but its own laziness about calling Skill. Override with --model or env.
+MODEL="${TRIGGER_EVAL_MODEL:-claude-haiku-5-5}"
 RUN_CWD=""
 PLUGIN_DIR=""
 while [ $# -gt 0 ]; do case "$1" in

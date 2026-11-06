@@ -9,13 +9,16 @@ Chase AI's skill-evals post, rebuilt on our headless-claude-hygiene rules).
 
 ```bash
 ./run.sh brain-sleep                 # uses prompts/brain-sleep.txt, haiku
-./run.sh my-skill --model claude-sonnet-5
-./run.sh curling-research --cwd ~/git/curling   # project-scoped skills need an in-scope cwd
+./run.sh brain-sleep --plugin-dir "$(git rev-parse --show-toplevel)"   # test THIS checkout, uninstalled
+./run.sh my-skill --model claude-sonnet-5        # or TRIGGER_EVAL_MODEL=... in the env
+./run.sh my-project-skill --cwd ~/git/my-project # project-scoped skills need an in-scope cwd
                                                  # --cwd runs --permission-mode default (prompts) so
                                                  # prompt text can't mutate the repo; TRIGGER_EVAL_UNSAFE_CWD=1 forces dontAsk
 ```
 
-Exit 0 = perfect matrix; nonzero = at least one MISS (or quota gate refused).
+Exit 0 = perfect matrix; nonzero = at least one MISS or ERR (or quota gate refused).
+ERR means the run wrote no transcript (timeout, quota, auth) — the verdict is
+unknown, not a pass, and the harness refuses to reuse the previous prompt's file.
 
 ## Prompt sets
 
@@ -36,8 +39,14 @@ Negative prompts are the valuable half: write them as near-misses
   artifact) under neutral `/tmp/te-w<cksum>` project dirs — the name is
   deliberately skill-agnostic so it doesn't leak the answer into the
   model's cwd; known junk, session-archaeology filters them.
-- Quota gate at 85% runs first; the nested-session hang is avoided with
-  `env -u CLAUDECODE -u CLAUDE_CODE_ENTRYPOINT`.
+- Quota gate at 85% runs first if `~/.claude/scripts/claude-usage-gate.sh`
+  exists (it is not shipped here); otherwise the harness warns and continues.
+  The nested-session hang is avoided with `env -u CLAUDECODE -u CLAUDE_CODE_ENTRYPOINT`.
+- Each `claude -p` gets `</dev/null`. The prompt loop's stdin is the matrix
+  file and `claude -p` appends stdin to the prompt, so without the redirect
+  every run was handed the whole +/- list — every trigger phrase leaked into
+  every negative. A matrix that "passes" with that leak proves nothing; the
+  bug was found and fixed 2026-11-06 (see `docs/audits/`).
 - Trigger behavior is model-dependent: a matrix that passes on haiku is
   a floor, not a ceiling. Re-run with your daily-driver model before
   trusting a borderline skill description.

@@ -77,7 +77,7 @@ def load_state(path: str) -> dict:
     """Load and validate eval-state.json. Exits with message on error."""
     p = Path(path)
     if not p.exists():
-        _die(f"State file not found: {path}\nRun `/handoff:eval-implementation setup` first.")
+        _die(f"State file not found: {path}\nRun the eval-implementation `setup` phase (skills/handoff/eval-implementation/SKILL.md) first.")
     try:
         state = json.loads(p.read_text())
     except json.JSONDecodeError as e:

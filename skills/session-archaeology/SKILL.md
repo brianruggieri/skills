@@ -11,17 +11,17 @@ Mine Claude Code session history for evidence. Every finding must be cited (sess
 
 - **Sessions:** `~/.claude/projects/<cwd-slug>/*.jsonl` — slug is the cwd with `/` → `-` (e.g. `-Users-example-git-myrepo`). Resolve your own project slugs at runtime rather than hardcoding a home dir: `ls ~/.claude/projects/`.
 - **Per-project memory:** `~/.claude/projects/<slug>/memory/MEMORY.md` — read first; often already answers "have we decided this".
-- **Archive fallback:** `~/.claude-archive/projects/` for pre-Mar-10-2026 history (retention was 30 days before `cleanupPeriodDays: 99999`).
+- **Archive fallback:** `~/.claude-archive/projects/` if you archive old project dirs there (headless-claude-hygiene's audit mode offers this). Default retention is `cleanupPeriodDays: 30`; anything older is gone unless you raised it or archived.
 - **JSONL shape:** one JSON object per line. Human/assistant turns are wrapped: `{"type":"user"|"assistant","message":{...},"timestamp":...,"sessionId":...}`. Also present: progress events, tool results, subagent sidecar files. Human input = `type == "user"` where `message.content` is a string (or text block) and there's no `toolUseResult`.
 
 ## Noise filters — apply FIRST, before any analysis
 
-Most files in the corpus are NOT human work. Known junk populations (canonical counts — headless-claude-hygiene links here):
+Most files in the corpus are NOT human work. Junk populations, with examples from one real corpus (substitute the tools in your own environment — the categories transfer, the names don't):
 
-1. **1-message haiku one-shots:** ccp's `--ai-context` summarizer. Fixture prompt: `Summarize this developer task in 3-5 words`. Drop any session whose only user message matches known fixture prompts.
-2. **Headless `--print` runs:** candidate-eval (~3,000 sessions), pulse (257 test sessions), personalities (~120 benchmark runs). These are program output, not the user's work.
-3. **Harness-generated worktree sessions:** arc `--worktrees-*` dirs, `agent-*` worktree slugs, sculptor `-sculptor-workspaces-*` slugs.
-4. **Fixture cwds:** anything under `/private/tmp/ccp-*` or other `/private/tmp` slugs.
+1. **1-message one-shots from summarizer tools:** e.g. a commit-summarizer's haiku call with the fixture prompt `Summarize this developer task in 3-5 words`. Drop any session whose only user message matches a known fixture prompt.
+2. **Headless `--print` runs:** eval harnesses (~3,000 sessions in one case), test suites that forgot to stub `claude` (257 sessions), benchmark loops (~120 runs). These are program output, not the user's work.
+3. **Harness-generated worktree sessions:** `--worktrees-*` dirs, `agent-*` worktree slugs, sandbox-workspace slugs from agent orchestrators.
+4. **Fixture cwds:** anything under `/private/tmp/*` or `/tmp/*` slugs (trigger-eval's `te-w*` dirs land here deliberately).
 
 Cheap heuristics, in order:
 
@@ -33,7 +33,7 @@ find ~/.claude/projects/<slug> -name '*.jsonl' -size -4k
 grep -l 'Summarize this developer task in 3-5 words' ~/.claude/projects/<slug>/*.jsonl
 
 # junk dirs by slug pattern
-ls ~/.claude/projects/ | grep -E 'worktrees|agent-|sculptor-workspaces|private-tmp'
+ls ~/.claude/projects/ | grep -E 'worktrees|agent-|workspaces|private-tmp|^-tmp-'
 ```
 
 Filter by: message count, known fixture prompts, `/private/tmp` cwds, worktree/`agent-*` dirs. When in doubt, sample the first user message — if it reads like a template, it's a template.
@@ -47,7 +47,7 @@ Filter by: message count, known fixture prompts, `/private/tmp` cwds, worktree/`
 ## Workflow
 
 1. Read the relevant project `memory/MEMORY.md` files — decisions are often already recorded there.
-2. Map candidate project dirs: `ls -d ~/.claude/projects/*/ | grep -vE 'worktrees|agent-|sculptor'`. Include `~/.claude-archive` if the question predates Mar 10 2026.
+2. Map candidate project dirs: `ls -d ~/.claude/projects/*/ | grep -vE 'worktrees|agent-|workspaces'`. Include `~/.claude-archive` if the question predates your retention window.
 3. Apply noise filters above.
 4. **Broad questions** ("what have I done with X", retrospective, resume material): fan out — one subagent per project dir, each mining human user messages + outcomes from the filtered JSONLs; a synthesizer pass reconciles overlaps and dedupes.
 5. **Narrow questions** ("have we decided this before", "check your logs before re-deciding"): NO fan-out. Targeted grep across the relevant project's JSONLs first:
@@ -69,6 +69,6 @@ for line in open(sys.argv[1]):
 
 Every claim cites its source: **session id (short), date, project, and a direct quote**. Format:
 
-> "exact quote from the session" — `a1b2c3d4`, 2026-03-28, ~/git/candidate-eval
+> "exact quote from the session" — `a1b2c3d4`, 2026-03-28, ~/git/my-project
 
 If a question can't be answered from the corpus, say so — don't extrapolate from memory files alone. Distinguish "the user said X" (user message) from "Claude did X" (assistant/tool activity).

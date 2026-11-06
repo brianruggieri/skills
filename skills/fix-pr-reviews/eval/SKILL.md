@@ -6,6 +6,11 @@ allowed-tools: Read Write Bash Glob Agent
 
 # Eval: PR Comment Triage
 
+> **Repo-maintenance runbook, not an installed skill.** The plugin loads only
+> `skills/<name>/SKILL.md`; a nested SKILL.md like this one is never in the skill
+> list (verified with `claude --plugin-dir . plugin details skills`). Run it from
+> a checkout of this repo by asking Claude to read this file and follow it.
+
 Run blind evaluation of `skills/fix-pr-reviews/prompts/triage.md` against test fixtures.
 
 All repo-relative paths below assume the repo root as CWD (the skill lives at

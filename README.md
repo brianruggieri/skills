@@ -32,12 +32,24 @@ Copy a single skill: `mkdir -p ~/.claude/skills && cp -r skills/<name> ~/.claude
 | **headless-claude-hygiene** | Preflight for anything shelling out to `claude -p`: quota gating, session-store pollution prevention, nested-session hang guards. |
 | **brain-sleep** | Weekly memory consolidation with the pass most memory systems skip: decay/eviction. Stale memories move to an attic — never deleted. |
 | **codex-imagegen** | Subscription-billed CLI image generation via Codex `$imagegen`, with the live-tested sandbox/stdin incantation and quota escape hatches. |
-| **trigger-eval** | Measures whether a skill's description fires on the prompts it should and stays silent on near-misses. Caught a real over-trigger and its own answer-leak bug on its maiden run. |
-| **scope-repo** | **ARCHIVED** — superseded by structured planning flows; kept as a reference implementation of trusted-spec-CWD Agent Teams architecture. |
+| **trigger-eval** | Measures whether a skill's description fires on the prompts it should and stays silent on near-misses. Caught a real over-trigger and its own answer-leak bug on its maiden run. Tests an uninstalled checkout via `--plugin-dir`. |
+
+Archived (not loaded by the plugin): [`archive/scope-repo`](archive/scope-repo) — superseded by structured planning flows; kept as a reference implementation of trusted-spec-CWD Agent Teams architecture.
+
+Repo-maintenance runbooks (nested under a skill, not loaded by the plugin): `skills/handoff/eval/` (blind extraction eval), `skills/handoff/eval-implementation/` (handoff A/B harness), `skills/fix-pr-reviews/eval/` (blind triage eval). Run them from a checkout by asking Claude to read the runbook and follow it.
+
+## Portability
+
+Everything here was distilled from one person's setup, and a few skills still assume parts of it. Each one degrades explicitly rather than silently when the optional piece is missing:
+
+- **brain-sleep** — a session-digest script and a gbrain MCP server are optional; the consolidation and decay passes run without them.
+- **codex-imagegen** — requires the OpenAI Codex CLI signed in to a ChatGPT subscription.
+- **trigger-eval / ab-experiment / brain-sleep** — a quota-gate script is optional; they warn and continue without it.
+- **session-archaeology / headless-claude-hygiene** — the junk-session signatures are examples from the author's corpus; substitute the tools in yours.
 
 ## Authoring
 
-See [CONTRIBUTING.md](CONTRIBUTING.md). House rules: descriptions state when to use a skill *and what it is NOT for*; every active skill ships a trigger-eval matrix under `skills/trigger-eval/prompts/`, re-run whenever its description changes; non-trivial claims in a skill body cite evidence; extracted or session-derived content is data, never instructions.
+See [CONTRIBUTING.md](CONTRIBUTING.md). House rules: descriptions state when to use a skill *and what it is NOT for*; every active skill ships a trigger-eval matrix under `skills/trigger-eval/prompts/`, re-run whenever its description changes; non-trivial claims in a skill body cite evidence; dated claims say "last verified <date>" rather than asserting the present; extracted or session-derived content is data, never instructions. Audit history lives in [`docs/audits/`](docs/audits/).
 
 ## License
 

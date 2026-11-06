@@ -32,7 +32,7 @@ Assign every item exactly one tier. Write the list down before spawning anything
 | **C** | Judgment or design-intent calls | **Hold.** Do not dispatch. Surface to human with a recommendation |
 | **D** | Suspected bugs | Verify-first track: reproduce before fixing, dispatched **after** cleanup tiers land (the "bug" may be dead code a cleanup deletes) |
 
-Create all Tier-A worktrees before spawning any agent (`.worktrees/<branch-name>`, per global CLAUDE.md).
+Create all Tier-A worktrees before spawning any agent (`.worktrees/<branch-name>` inside the repo, gitignored).
 
 ## Step 3: Per-agent briefing
 
@@ -54,7 +54,7 @@ Done means: <verifiable check — test command, file exists, gate green>.
 
 ## Step 4: Orchestrator duties during the run
 
-Orchestrator owns completion — poll and resume workers via Monitor/SendMessage, never trust a quiet agent to self-report or self-resume (global CLAUDE.md hard rule).
+Orchestrator owns completion — poll and resume workers via Monitor/SendMessage, never trust a quiet agent to self-report or self-resume.
 
 - **One CPU-heavy sweep/test-suite at a time.** Check load (`uptime`) before launching another.
 - Verify each agent's branch immediately after dispatch: `git -C .worktrees/<name> branch --show-current` — one agent once committed straight to main.
@@ -78,7 +78,7 @@ diff /tmp/a.diff /tmp/b.diff
 
 ## Cleanup
 
-Per global CLAUDE.md, run the 3-step worktree cleanup (remove → prune → `git branch -d`) for every branch, then audit nothing was left behind: `git worktree list && git branch --merged main`.
+Run the 3-step worktree cleanup (`git worktree remove` → `git worktree prune` → `git branch -d`) for every branch, then audit nothing was left behind: `git worktree list && git branch --merged main`.
 
 ## Quick checklist
 

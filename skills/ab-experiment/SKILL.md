@@ -30,7 +30,7 @@ Call the resolved directory `$HANDOFF_EVAL` below.
 
 ## 2. Run
 
-- [ ] Before launching, check the 5-hour window: `jq .five_hour.utilization ~/.claude/usage-state.json` (or run `~/.claude/scripts/claude-usage-gate.sh`) — if utilization >80%, defer the run.
+- [ ] Before launching, check remaining quota (`/usage` in an interactive session, or your own gate script if you have one) — if the 5-hour window is above ~80%, defer the run. Two full arms plus graders is a lot of draw.
 - [ ] If THIS session is interactive: do NOT run bare `claude -p` inline — nested interactive→headless hangs. For any in-session launch use the sanctioned escape hatch `env -u CLAUDECODE -u CLAUDE_CODE_ENTRYPOINT claude -p ...` (as a background Bash job + Monitor), or print both commands for the user to run in a separate terminal.
 - [ ] Run both arms in the same wall-clock window where possible (same model snapshot, same load conditions).
 - [ ] On API 401/500 mid-run (headless OAuth tokens expire ~8h and do NOT auto-refresh; the 401 lands in the session JSONL, not stderr — process just exits rc=1): relaunch the dead arm and aggregate metrics across all runs of that arm (Mar 24 precedent). Note the relaunch in the evidence doc.
@@ -51,7 +51,7 @@ Call the resolved directory `$HANDOFF_EVAL` below.
 
 ## 4. Grade
 
-- [ ] Grade with SUBAGENTS in this session (subscription). Never API, never promptfoo — rejected twice; `claude -p` also burns subscription anyway (June 2026 billing change paused).
+- [ ] Grade with SUBAGENTS in this session (subscription). Never API, never promptfoo — rejected twice; `claude -p` has drawn from the subscription window every time it was checked, so it saves nothing (see headless-claude-hygiene).
 - [ ] Grade per /honest-assessment step 3 (rubric-first, named deductions, blind diff). Rubric lives at `$HANDOFF_EVAL/prompts/grade-implementation.md` (see step 1 for how to resolve `$HANDOFF_EVAL`); strip arm names, branch names, commit messages, and any PR-style claims before handing a diff to a grader.
 - [ ] Use 2 graders per arm; if they disagree by >1 point on total, run a third and take the median.
 - [ ] Only after all scores are in, unblind and map scores to arms.

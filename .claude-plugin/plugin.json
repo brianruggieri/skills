@@ -1,7 +1,7 @@
 {
 	"name": "skills",
 	"description": "Workflow skills for Claude Code: session handoffs, controlled A/B experiments, honest metric audits, parallel-agent dispatch discipline, PR review resolution, voice-matched writing, trigger-reliability evals, and more.",
-	"version": "1.0.0",
+	"version": "1.1.0",
 	"author": { "name": "Brian Ruggieri", "url": "https://github.com/brianruggieri" },
 	"repository": "https://github.com/brianruggieri/skills",
 	"license": "MIT"

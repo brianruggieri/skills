@@ -16,8 +16,11 @@ is relative to that directory (the CWD is not assumed to be the skill dir).
 1. Write (or update) the prompt matrix at `<SKILL_DIR>/prompts/<skill>.txt` —
    `+ ` lines MUST load the skill, `- ` lines must NOT. Negatives are the
    valuable half: write near-misses, not obviously-unrelated asks.
-2. Run `cd <SKILL_DIR> && ./run.sh <skill> [--model MODEL] [--cwd DIR]`. Exit 0
-   = perfect matrix; nonzero = at least one MISS.
+2. Run `cd <SKILL_DIR> && ./run.sh <skill> [--model MODEL] [--cwd DIR] [--plugin-dir DIR]`.
+   Exit 0 = perfect matrix; nonzero = at least one MISS or ERR. Pass
+   `--plugin-dir <repo root>` to test a plugin checkout that is not installed
+   (this repo's CONTRIBUTING flow). An ERR row means no transcript was written
+   (quota/auth/timeout) and the verdict is unknown — rerun, don't count it.
 3. If any prompt MISSes, edit the target skill's `description:` and re-run
    until the matrix is clean.
 

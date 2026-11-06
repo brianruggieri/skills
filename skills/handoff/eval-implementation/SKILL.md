@@ -6,14 +6,23 @@ allowed-tools: Read Write Bash Glob Agent
 
 # Eval: Implementation A/B Test
 
-Run a controlled experiment comparing two implementation sessions — one with a handoff document, one with the plan only.
+> **Repo-maintenance runbook, not an installed skill.** The plugin loads only
+> `skills/<name>/SKILL.md`; a nested SKILL.md like this one is never in the skill
+> list (verified with `claude --plugin-dir . plugin details skills`). Run it from
+> a checkout of this repo by asking Claude to read this file and follow it.
+
+Run a controlled experiment comparing two implementation sessions — one with a handoff document, one with the plan only. For a general one-variable experiment (not handoff-specific), use the installed `ab-experiment` skill, which reuses this harness's miner and rubric.
 
 ## Invocation
 
+Two phases, run as two separate requests from the repo root:
+
 ```
-/handoff:eval-implementation setup --source-branch <branch> --plan <abs-path> --handoff <abs-path>
-/handoff:eval-implementation compare
+setup --source-branch <branch> --plan <abs-path> --handoff <abs-path>
+compare
 ```
+
+(e.g. "read skills/handoff/eval-implementation/SKILL.md and run the setup phase with --source-branch feat/x …")
 
 ---
 
@@ -75,8 +84,8 @@ Strip `feat/` prefix from `--source-branch`. E.g., `feat/eligibility-hard-caps` 
      cd .worktrees/eval-no-handoff
      claude --append-system-prompt-file <abs-path-to-plan.md>
 
-   When both sessions complete, run:
-     /handoff:eval-implementation compare
+   When both sessions complete, run the `compare` phase of
+   skills/handoff/eval-implementation/SKILL.md
    ```
 
 ---

@@ -5,9 +5,9 @@ description: "Use BEFORE launching any batch, pipeline, or test suite that shell
 
 # /headless-claude-hygiene
 
-Headless `claude -p` calls burn the same 5-hour subscription window as interactive work and each one dumps a session JSONL into `~/.claude/projects/<cwd-slug>/`. The blast radius is large — see session-archaeology's canonical junk-population list for the counts (candidate-eval, pulse, personalities). Unstubbed tests have created hundreds of junk sessions in minutes; blog-a-claude hit rate limits 6x in one day. This skill enforces the scattered mitigations.
+Headless `claude -p` calls burn the same 5-hour subscription window as interactive work and each one dumps a session JSONL into `~/.claude/projects/<cwd-slug>/`. The blast radius is large — see session-archaeology's junk-population list for examples from one real corpus: thousands of headless eval sessions, hundreds of test-suite sessions, a blog pipeline that hit rate limits six times in one day. This skill enforces the scattered mitigations.
 
-**Still true as of July 2026:** the June 15 billing split (SDK/`-p` → separate credit pool) was PAUSED — headless calls still draw from the subscription window (recheck after 2026-10-01 — time-sensitive). Also: OAuth refresh does NOT fire in non-interactive mode; tokens expire after 8h and headless runs die with 401s buried in the session JSONL (exit rc=1, nothing on stderr). Any unattended run longer than remaining token life will fail silently.
+**Verify the billing model before relying on it.** Every time this was checked (most recently July 2026), headless `claude -p` calls drew from the same subscription window as interactive work; an announced split into a separate SDK credit pool was paused. Do not assume either way — check the current pricing docs or `/usage` at the start of any large batch. Independent of billing: OAuth refresh does NOT fire in non-interactive mode; tokens expire after ~8h and headless runs die with 401s buried in the session JSONL (exit rc=1, nothing on stderr). Any unattended run longer than remaining token life will fail silently.
 
 ## When to invoke
 
@@ -17,7 +17,7 @@ Headless `claude -p` calls burn the same 5-hour subscription window as interacti
 
 ## Preflight checklist (run in order, before dispatch)
 
-1. **Nested-session guard.** Check `echo "$CLAUDE_CODE_SESSION_ID"`. If set, you are INSIDE an interactive Claude session — `claude -p` will hang (proven in claude_personalities). Never run it directly. Instead, print the exact command(s) for the user to paste into a separate terminal:
+1. **Nested-session guard.** Check `echo "$CLAUDE_CODE_SESSION_ID"`. If set, you are INSIDE an interactive Claude session — `claude -p` will hang (observed repeatedly in a benchmark harness). Never run it directly. Instead, print the exact command(s) for the user to paste into a separate terminal:
    ```bash
    # Run this in a fresh terminal, not inside Claude Code:
    cd /path/to/scratch && claude -p "..." --output-format json
@@ -38,19 +38,19 @@ Headless `claude -p` calls burn the same 5-hour subscription window as interacti
 
 3. **Runs longer than token life will 401 silently.** For unattended runs, note when the OAuth token was last refreshed (interactive session start). If the run may outlast ~8h from that point, split it or plan a mid-run interactive touch. A silent rc=1 with a clean stderr means: grep the newest session JSONL for `401`.
 
-4. **Does each call need Claude at all?** Prefer local-heuristic code paths first; gate LLM calls behind an explicit opt-in flag (the ccp `--no-compact-style` pattern — heuristic by default, Claude only when asked). Suggest API-key routing only when subscription use is impractical (per CLAUDE.md: embedded in apps, production services).
+4. **Does each call need Claude at all?** Prefer local-heuristic code paths first; gate LLM calls behind an explicit opt-in flag (heuristic by default, Claude only when asked). Suggest API-key routing only when subscription use is impractical (embedded in apps, production services).
 
 ## Pollution prevention
 
-- **Tests MUST stub the binary.** Any test exercising claude-calling code puts a fake `claude` first on PATH (the ccp `test_ai_context.sh` pattern):
+- **Tests MUST stub the binary.** Any test exercising claude-calling code puts a fake `claude` first on PATH:
   ```bash
   STUB_DIR=$(mktemp -d)
   printf '#!/bin/sh\necho "stub response"\n' > "$STUB_DIR/claude"
   chmod +x "$STUB_DIR/claude"
   PATH="$STUB_DIR:$PATH" ./run_tests.sh
   ```
-  An unstubbed test suite is how 257 junk sessions appear in 86 minutes.
-- **PRIMARY mitigation for batch runs: `--no-session-persistence`.** Pass it to every `claude -p` call in a batch/pipeline so no session JSONL is written at all — nothing to clean up afterward (global CLAUDE.md cites this skill for exactly this flag).
+  An unstubbed test suite is how 257 junk sessions appeared in 86 minutes in one real project.
+- **PRIMARY mitigation for batch runs: `--no-session-persistence`.** Pass it to every `claude -p` call in a batch/pipeline so no session JSONL is written at all — nothing to clean up afterward.
   ```bash
   claude -p "..." --no-session-persistence --output-format json
   ```
@@ -59,7 +59,7 @@ Headless `claude -p` calls burn the same 5-hour subscription window as interacti
   SCRATCH=$(mktemp -d /tmp/claude-batch-XXXX) && cd "$SCRATCH" && <pipeline>
   # junk lands in ~/.claude/projects/-private-tmp-claude-batch-XXXX/ — one dir, easy to archive
   ```
-- Tools that call `claude -p` from inside other projects (ccp's `--ai-context` haiku calls) should `cd` to scratch first or be flagged off by default.
+- Tools that call `claude -p` from inside other projects (e.g. a commit-summarizer's haiku calls) should `cd` to scratch first or be flagged off by default.
 
 ## Audit mode ("why so many sessions?")
 
@@ -75,17 +75,18 @@ for d in ~/.claude/projects/*/; do
   [ "$n" -gt 10 ] && echo "$n  $d"
 done
 
-# Known junk signatures: ccp haiku summarizer prompts, tmp fixture dirs
-ls -d ~/.claude/projects/-private-tmp-ccp-* 2>/dev/null
-grep -l 'compact.*style\|haiku' ~/.claude/projects/*/[a-f0-9]*.jsonl 2>/dev/null | head
+# Known junk signatures: tmp fixture dirs, repeated template prompts from your own tools
+ls -d ~/.claude/projects/-private-tmp-* ~/.claude/projects/-tmp-* 2>/dev/null
+# substitute the fixture prompt(s) your tooling sends:
+grep -l 'Summarize this developer task' ~/.claude/projects/*/[a-f0-9]*.jsonl 2>/dev/null | head
 ```
 
 Report: junk session count, MB, top offender dirs. Then offer (do not perform unprompted):
 ```bash
 mkdir -p ~/.claude-archive/projects && mv ~/.claude/projects/<junk-dir> ~/.claude-archive/projects/
 ```
-Note the interaction with `cleanupPeriodDays: 99999`: nothing auto-purges, so headless junk grows unbounded — periodic audit is the only pressure valve. Track with `du -sh ~/.claude/projects/`.
+If you raised `cleanupPeriodDays` to keep history (default is 30 days), nothing auto-purges, so headless junk grows unbounded — periodic audit is the only pressure valve. Track with `du -sh ~/.claude/projects/`.
 
 ## Security & trust boundary
 
-Session JSONLs are the user's private conversation data. Audit mode is read-only by default; moving/archiving requires his confirmation; deletion is never offered as a default. Do not pipe session contents to external services or include transcript excerpts in reports beyond what identifies junk (line counts, prompt signatures, sizes).
+Session JSONLs are the user's private conversation data. Audit mode is read-only by default; moving/archiving requires the user's confirmation; deletion is never offered as a default. Do not pipe session contents to external services or include transcript excerpts in reports beyond what identifies junk (line counts, prompt signatures, sizes).

@@ -3,7 +3,11 @@
 # when it should and stays silent when it shouldn't.
 #
 # Usage:
-#   run.sh <skill-name> [--model MODEL] [--cwd DIR]
+#   run.sh <skill-name> [--model MODEL] [--cwd DIR] [--plugin-dir DIR]
+#
+# --plugin-dir DIR loads a plugin checkout (e.g. this repo) into each headless
+# run, so a skill can be trigger-tested before it is installed anywhere.
+# TRIGGER_EVAL_MODEL overrides the default model without a flag.
 #
 # Prompt sets live in prompts/<skill-name>.txt, one per line:
 #   + prompt that MUST load the skill
@@ -17,12 +21,14 @@
 set -uo pipefail
 cd "$(dirname "$0")"
 
-SKILL="${1:?usage: run.sh <skill-name> [--model MODEL] [--cwd DIR]}"; shift
-MODEL="claude-haiku-4-5-20251001"
+SKILL="${1:?usage: run.sh <skill-name> [--model MODEL] [--cwd DIR] [--plugin-dir DIR]}"; shift
+MODEL="${TRIGGER_EVAL_MODEL:-claude-haiku-4-5-20251001}"
 RUN_CWD=""
+PLUGIN_DIR=""
 while [ $# -gt 0 ]; do case "$1" in
 	--model) MODEL="$2"; shift 2 ;;
 	--cwd) RUN_CWD="$2"; shift 2 ;;
+	--plugin-dir) PLUGIN_DIR="$(cd "$2" && pwd -P)" || { echo "no such dir: $2" >&2; exit 2; }; shift 2 ;;
 	*) echo "unknown flag: $1" >&2; exit 2 ;;
 esac; done
 
@@ -73,10 +79,21 @@ while IFS= read -r line; do
 	[ "$sign" = "+" ] || [ "$sign" = "-" ] || continue
 
 	before=$(ls "$PROJ_DIR"/*.jsonl 2>/dev/null | wc -l)
-	# env -u: nested claude -p hangs inside a live session otherwise
+	# env -u: nested claude -p hangs inside a live session otherwise.
+	# </dev/null is NOT optional: this loop's stdin is the prompt file, and
+	# claude -p appends anything on stdin to the prompt — without the redirect
+	# every run received the ENTIRE +/- matrix as part of its prompt, which
+	# leaks every trigger phrase into every negative (found 2026-11-06).
 	( cd "$RUN_CWD" && env -u CLAUDECODE -u CLAUDE_CODE_ENTRYPOINT -u CLAUDE_CODE_SESSION_ID \
-		$TIMEOUT claude -p "$prompt" --model "$MODEL" --max-turns 2 --permission-mode "$PERM_MODE" ) >/dev/null 2>&1
+		$TIMEOUT claude -p "$prompt" --model "$MODEL" --max-turns 2 --permission-mode "$PERM_MODE" \
+		${PLUGIN_DIR:+--plugin-dir "$PLUGIN_DIR"} ) </dev/null >/dev/null 2>&1   # ${x:+...} keeps bash 3.2 (macOS) happy under set -u
 
+	# A run that produced no new transcript (quota, auth, timeout) must not
+	# silently inherit the previous prompt's verdict.
+	after=$(ls "$PROJ_DIR"/*.jsonl 2>/dev/null | wc -l)
+	if [ "$after" -le "$before" ]; then
+		fail=$((fail+1)); results="${results}ERR  no transcript written (timeout/quota/auth?) | ${prompt:0:70}\n"; continue
+	fi
 	# newest transcript = this run
 	f=$(ls -t "$PROJ_DIR"/*.jsonl 2>/dev/null | head -1)
 	fired=no
@@ -90,7 +107,7 @@ while IFS= read -r line; do
 	results="${results}${verdict} want=${want} fired=${fired} | ${prompt:0:70}\n"
 done < "$PROMPTS"
 
-echo "== trigger-eval: $SKILL (model: $MODEL) =="
+echo "== trigger-eval: $SKILL (model: $MODEL${PLUGIN_DIR:+, plugin-dir: $PLUGIN_DIR}) =="
 printf "%b" "$results"
 echo "== $pass ok, $fail miss =="
 [ "$fail" -eq 0 ]

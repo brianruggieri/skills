@@ -2,3 +2,5 @@
 + fan out subagents over these three implementation plans
 - run these two shell commands in parallel
 - what's a good way to organize this epic?
++ spin up a worktree per plan and run five coding agents at once to implement them
+- run the test suite in parallel across 4 shards to speed up CI

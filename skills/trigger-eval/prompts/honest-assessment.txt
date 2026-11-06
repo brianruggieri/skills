@@ -2,3 +2,5 @@
 + is this benchmark result honestly better, verify the metrics
 - review this PR for bugs
 - how are you feeling about the project?
++ audit the numbers in this sprint report, which were actually measured and which came from mocks?
+- write up what we shipped this sprint for the standup
